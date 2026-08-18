@@ -30,6 +30,13 @@ SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSO
 SSH="ssh -i $SSH_KEY -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new ${DROPLET_USER}@${DROPLET_IP}"
 
 BASE="$HOME/meritgiving"
+# Every python3 invocation below runs a script that has moved into a subdirectory
+# (scripts/ops, scripts/core, scripts/search, ...) during folder migrations, and
+# several of them use repo-root-qualified imports (`from scripts.X import Y`).
+# Direct script execution puts the script's own directory on sys.path[0], not the
+# repo root, so those imports fail with ModuleNotFoundError unless PYTHONPATH is
+# set explicitly. Exporting it once here instead of per-invocation.
+export PYTHONPATH="$BASE"
 LIVE_DB="$BASE/data/merit_registry.db"
 SCRATCH="${DEPLOY_SCRATCH:-$BASE/.deploy_scratch}"   # sandbox; nothing here is served live
 SNAPSHOT="$SCRATCH/snapshot.db"
@@ -163,9 +170,9 @@ precompute() {
   # FAISS_PQ=1 is mandatory: IVFPQ (~64B/vector) keeps the index ~150-300M so the
   # payload fits the 33G droplet (decision 2026-06-09). Without it the flat index
   # is ~7G and the disk guard aborts the deploy.
-  run_stage "faiss_index"  "$PRECOMPUTE/faiss_index.bin"  env FAISS_PQ=1 python3 scripts/build_faiss_index.py
-  python3 scripts/precompute_browse.py  >>"$LOG" 2>&1 || die "browse precompute failed"
-  SKIP_FAISS=1 python3 scripts/precompute_orgs.py    >>"$LOG" 2>&1 || die "orgs precompute failed"
+  run_stage "faiss_index"  "$PRECOMPUTE/faiss_index.bin"  env FAISS_PQ=1 python3 scripts/search/build_faiss_index.py
+  python3 scripts/enrichment/precompute_browse.py  >>"$LOG" 2>&1 || die "browse precompute failed"
+  SKIP_FAISS=1 python3 scripts/core/precompute_orgs.py    >>"$LOG" 2>&1 || die "orgs precompute failed"
   # precompute_orgs.py always writes similar_organizations=[] (its FAISS-based
   # path is dead code, never called from main()) -- this second pass patches
   # real tiered matches into every org file in place. Must run after
@@ -174,8 +181,8 @@ precompute() {
   # Fixed 2026-07-10: every full deploy was shipping empty similar-orgs lists
   # (verified live) because this was only running on a separate, unwired
   # monthly cron that any deploy in between silently wiped out.
-  python3 scripts/precompute_similar_orgs.py >>"$LOG" 2>&1 || die "similar-orgs precompute failed"
-  python3 scripts/precompute_content.py >>"$LOG" 2>&1 || die "content precompute failed"
+  python3 scripts/core/precompute_similar_orgs.py >>"$LOG" 2>&1 || die "similar-orgs precompute failed"
+  python3 scripts/core/precompute_content.py >>"$LOG" 2>&1 || die "content precompute failed"
 
   # Required artifacts present?
   for f in browse content faiss_index.bin ein_map.json.gz; do
@@ -185,7 +192,7 @@ precompute() {
 
   # LINK-INTEGRITY GATE — donate/website links must match the snapshot exactly (fail closed).
   log "  validating donate/website link integrity..."
-  python3 scripts/validate_link_integrity.py >>"$LOG" 2>&1 \
+  python3 scripts/testing/validate_link_integrity.py >>"$LOG" 2>&1 \
     || die "link-integrity validation FAILED — aborting, droplet untouched (see $LOG)"
   log "✓ link integrity verified — no corrupt or stale donate/website links"
 }
@@ -254,7 +261,7 @@ frontend_build() {
   # For frontend-only: reuse committed snapshot (preserve published research figures).
   if [ -s "$SNAPSHOT" ]; then
     log "  regenerating research-snapshot.json from snapshot DB..."
-    MERIT_DB_PATH="$SNAPSHOT" python3 scripts/export_research_snapshot.py >>"$LOG" 2>&1 \
+    MERIT_DB_PATH="$SNAPSHOT" PYTHONPATH="$BASE" python3 scripts/ops/export_research_snapshot.py >>"$LOG" 2>&1 \
       || die "research snapshot export failed"
   else
     log "  reusing committed research-snapshot.json (frontend-only path)"
@@ -396,5 +403,5 @@ log "Local :5000 was never disturbed. Snapshot+payload retained in $SCRATCH (res
 # ============================================================
 log ""
 log "===== POST-DEPLOYMENT HEALTH CHECK ====="
-bash "$BASE/scripts/health_check.sh" 2>&1 | tee -a "$LOG" || log "WARN: Post-deploy health check had warnings — review above"
+bash "$BASE/scripts/ops/health_check.sh" 2>&1 | tee -a "$LOG" || log "WARN: Post-deploy health check had warnings — review above"
 log "===== DEPLOYMENT COMPLETE ====="
