@@ -17,6 +17,12 @@ Usage:
 import os, sys, gzip, json, sqlite3, random
 from pathlib import Path
 
+# scripts/testing/ -> repo root, so registry_filters.py (one level up from
+# scripts/) resolves regardless of the caller's PYTHONPATH. Same fix pattern
+# as precompute_content.py (see LESSONS.md, folder-migration import bug).
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from scripts.registry_filters import DEDUCTIBLE_FILTER
+
 DB = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
 OUT = Path(os.environ.get("PRECOMPUTE_OUT", "precompute_output"))
 ORGS = OUT / "orgs"
@@ -44,18 +50,29 @@ def main():
     failures = []
 
     # ---- 1+2. Donate links: check EVERY deductible org with a donate_url (small set, exhaustive) ----
-    donors = c.execute("""
-        SELECT EIN, donate_url, donate_url_status, donate_platform, deductibility
+    #
+    # BUG FIX 2026-08-18 (two bugs, same root cause -- this predicate was re-spelled
+    # inline instead of imported, exactly what registry_filters.py's own docstring
+    # warns against):
+    #   1. This used to filter in Python with `r["deductibility"] != 1` (int). The
+    #      column is TEXT ('1', '2', '0', '4', 'revoked'), so that comparison was
+    #      never true -- all 97,360 donate_url rows hit `continue`, and this
+    #      "exhaustive" check silently verified 0 rows on every run while still
+    #      printing "LINK INTEGRITY OK". Found by noticing an exhaustive check over
+    #      97,360 rows reporting 0+0 instead of investigating further.
+    #   2. Fixing the type alone (`!= "1"`) surfaced a second issue: it flagged 3,078
+    #      revoked/inactive orgs as "missing precompute file" -- correctly excluded by
+    #      precompute_orgs.py's active-org filter, but not by this hand-rolled check.
+    #      DEDUCTIBLE_FILTER (registry_filters.py) is the canonical, already-correct
+    #      version of this exact predicate -- use it instead of a third inline rewrite.
+    donors = c.execute(f"""
+        SELECT EIN, donate_url, donate_url_status, donate_platform
         FROM registry_enriched
-        WHERE donate_url IS NOT NULL AND donate_url != ''
+        WHERE donate_url IS NOT NULL AND donate_url != '' AND {DEDUCTIBLE_FILTER}
     """).fetchall()
     print(f"Checking {len(donors)} orgs with donate_url (exhaustive)...")
     donate_checked = donate_missing = 0
     for r in donors:
-        # Precompute only includes deductible orgs (fail-closed at source). Non-deductible
-        # orgs correctly have no file and must NOT surface a donate path — skip them.
-        if r["deductibility"] != 1:
-            continue
         org = load_org(r["EIN"])
         if org is None:
             donate_missing += 1
@@ -69,10 +86,16 @@ def main():
                 )
 
     # ---- 3. Websites: large random sample ----
-    sites = c.execute("""
+    # Same predicate consistency fix as the donate check above -- this used
+    # `deductibility = 1` which, unlike the Python comparison, SQLite's TEXT
+    # affinity actually coerces correctly, so this half wasn't silently broken.
+    # It was still missing the revoked/irs_revoked exclusion, though harmless
+    # here since a mismatch just increments the tolerated site_skipped counter,
+    # not failures -- fixed anyway for consistency with the canonical predicate.
+    sites = c.execute(f"""
         SELECT EIN, website, website_status
         FROM registry_enriched
-        WHERE website IS NOT NULL AND website != '' AND deductibility = 1
+        WHERE website IS NOT NULL AND website != '' AND {DEDUCTIBLE_FILTER}
     """).fetchall()
     sample = random.sample(sites, min(WEBSITE_SAMPLE, len(sites)))
     print(f"Checking {len(sample)} website samples (of {len(sites)} deductible w/ website)...")
