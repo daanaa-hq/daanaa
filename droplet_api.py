@@ -2654,6 +2654,17 @@ def get_organization(ein):
     if mor is not None and not (-120 <= mor <= 120):
         org['months_of_reserve'] = None
     org['total_revenue_formatted'] = f"${org['total_revenue']:,.0f}" if org['total_revenue'] else None
+    # Inferred revenue band for orgs with no full-form 990 filing on record
+    # (see migrations/026_revenue_band_estimate.sql + DECISIONS.md 2026-08-17).
+    # Only ever populated when total_revenue is empty -- never overrides a
+    # real reported figure. Explicitly labeled "estimated" per Charter
+    # Promise 7 ("we don't know enough," never presented as confirmed fact).
+    if not org.get('total_revenue') and org.get('revenue_band_estimate') == 'under_50k':
+        org['revenue_display'] = 'Under $50,000'
+        org['revenue_display_is_estimate'] = True
+    else:
+        org['revenue_display'] = org['total_revenue_formatted']
+        org['revenue_display_is_estimate'] = False
     org['has_mission'] = bool(org.get('mission') and str(org['mission']).strip())
     org['has_website'] = bool(org.get('website') and str(org['website']).strip())
     org['tax_deductible'] = _compute_tax_deductible(
@@ -3214,12 +3225,65 @@ def get_score_history(ein):
 @app.route('/api/organizations/<ein>/financials')
 @limiter.limit("60 per minute")
 def get_financials(ein):
+    """Returns up to the 5 most recent years of financial history.
+
+    2026-08-18: this endpoint used to hard-return exactly one record
+    (LIMIT 1 against registry_enriched's single latest-year snapshot),
+    ignoring org_revenue_history entirely -- a stale leftover comment
+    said "propublica_financials was removed; serve single-year data"
+    and nobody upgraded it when org_revenue_history (migration 023,
+    447K orgs, avg 8.7 years each) landed later. Found by a Codex
+    diagnostic pass. Now prefers real multi-year history and only
+    falls back to the single-year registry_enriched snapshot for orgs
+    with zero org_revenue_history rows (registry_enriched has
+    total_liabilities/net_assets that org_revenue_history doesn't --
+    those fields are left null for historical years rather than
+    fabricated, per this repo's evidence-based data principle).
+    """
     ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
     if not ein_clean:
         return jsonify({"error": "Invalid EIN"}), 400
 
     db = get_db()
-    # propublica_financials was removed; serve single-year data from registry_enriched
+
+    history_rows = db.execute("""
+        SELECT tax_year, total_revenue, total_expenses, total_assets
+        FROM org_revenue_history
+        WHERE EIN = ?
+        ORDER BY tax_year DESC
+        LIMIT 5
+    """, (ein_clean,)).fetchall()
+
+    if history_rows:
+        financials = []
+        for r in history_rows:
+            rev, exp = r["total_revenue"], r["total_expenses"]
+            # 13,309 rows in org_revenue_history have revenue=0 AND
+            # expenses=0 simultaneously -- an implausible real filing for
+            # an active org, more likely an incomplete/placeholder record
+            # (e.g. current fiscal year not yet filed). Treat as unknown
+            # (null, renders "--") rather than a misleading "$0".
+            is_placeholder = rev == 0 and exp == 0
+            financials.append({
+                "tax_prd_yr": r["tax_year"],
+                "totrevenue": None if is_placeholder else rev,
+                "totfuncexpns": None if is_placeholder else exp,
+                "totassetsend": r["total_assets"],
+                "totliabend": None,
+                "totnetassetend": None,
+                "totcntrbgfts": None,
+                "totprgmrevnue": None,
+                "compnsatncurrofcr": None,
+                "pdf_url": None,
+            })
+        return jsonify({
+            "ein": ein_clean,
+            "financials": financials,
+            "total": len(financials),
+        })
+
+    # Fallback: no org_revenue_history rows -- use the single most-recent
+    # snapshot from registry_enriched if we have one.
     row = db.execute("""
         SELECT latest_tax_year, total_revenue, total_expenses, total_assets,
                total_liabilities, net_assets
