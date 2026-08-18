@@ -12,7 +12,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts" / "discovery"))
 
 from discovery_daemon_health import (  # noqa: E402
     FULL_TIMEOUT_STREAK_THRESHOLD,
