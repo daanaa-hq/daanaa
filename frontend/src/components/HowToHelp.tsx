@@ -18,16 +18,25 @@ export default function HowToHelp({ org }: { org: ApiOrganization }) {
     return null
   }
 
-  const programPct = org.program_expense_pct ?? 0
-  const totalExpenses = org.total_functional_expenses ?? 0
+  // Data-integrity guard (ported from ExpenseBreakdown.tsx, 2026-08-16 incident:
+  // a partner org flagged this exact breakdown as wrong during a demo).
+  // registry_enriched.program_expenses/management_expenses/fundraising_expenses
+  // trace back to a legacy irs_soi ingestion pass and, for a large share of orgs,
+  // do NOT reconcile with the verified-correct total_expenses field -- commonly
+  // summing to ~2x the real total. Cross-check against total_expenses and refuse
+  // to render percentages we can't verify, rather than showing wrong numbers
+  // with a false confidence sentence attached. See DECISIONS.md 2026-08-16.
+  const programExpensesRaw = org.program_expenses ?? 0
+  const managementExpensesRaw = org.management_expenses ?? 0
+  const fundraisingExpensesRaw = org.fundraising_expenses ?? 0
+  const partsSum = programExpensesRaw + managementExpensesRaw + fundraisingExpensesRaw
+  const verifiedTotal = org.total_expenses
+  const reconciles = !!verifiedTotal && verifiedTotal > 0 && partsSum > 0
+    && Math.abs(partsSum - verifiedTotal) <= 0.2 * verifiedTotal
 
-  // Calculate admin and fundraising percentages if we have program pct
-  const adminPct = totalExpenses && org.management_expenses
-    ? Math.round((org.management_expenses / totalExpenses) * 100)
-    : 0
-  const fundraisingPct = totalExpenses && org.fundraising_expenses
-    ? Math.round((org.fundraising_expenses / totalExpenses) * 100)
-    : 0
+  const programPct = reconciles ? Math.round((programExpensesRaw / partsSum) * 100) : 0
+  const adminPct = reconciles ? Math.round((managementExpensesRaw / partsSum) * 100) : 0
+  const fundraisingPct = reconciles ? Math.round((fundraisingExpensesRaw / partsSum) * 100) : 0
 
   return (
     <section className="mb-12 py-8 md:py-12 border-b border-cool-grey/20">
@@ -52,8 +61,11 @@ export default function HowToHelp({ org }: { org: ApiOrganization }) {
           )}
         </div>
 
-        {/* Expense allocation breakdown */}
-        {hasAllocation && (
+        {/* Expense allocation breakdown — only rendered when the three category
+            amounts reconcile with verified total_expenses (see guard above).
+            Showing 0%/0% next to real dollar figures would read as data, not
+            as "unavailable" -- so the whole block hides rather than degrading. */}
+        {reconciles && (
           <div>
             <h3 className="font-body text-small font-semibold text-deep-navy mb-3 uppercase tracking-wide">Where your money goes</h3>
 

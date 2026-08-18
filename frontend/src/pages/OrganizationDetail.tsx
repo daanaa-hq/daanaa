@@ -40,7 +40,6 @@ import RecurringSetup from '../components/RecurringSetup'
 import DataContextNote from '../components/DataContextNote'
 import { normalizeExternalUrl } from '../utils/externalLink'
 import AtAGlance from '../components/AtAGlance'
-import ExpenseBreakdown from '../components/ExpenseBreakdown'
 import FinancialTrends from '../components/FinancialTrends'
 import BoardReviewSimulation from '../components/BoardReviewSimulation'
 import PeerMethodologyExplainer from '../components/PeerMethodologyExplainer'
@@ -1040,19 +1039,13 @@ export default function OrganizationDetail() {
               (ProvenanceLayers.tsx) kept in the tree, unmounted here — easy
               to revert if this reads wrong once more orgs are checked. */}
 
-          {/* Visibility Enhancement: Priority 2 — Expense Breakdown (2026-08-13)
-              Shows program vs admin vs fundraising expenses visually.
-              Addresses donor question: "Does my $ actually fund the mission?"
-              Stewardship P3 (evidence-based) + P5 (no shame language) */}
-          {/* No outer sum-gate here on purpose (removed 2026-08-16): the old
-              gate only checked program+management+fundraising > 0, which
-              stayed true even when those fields don't reconcile with
-              total_expenses (see ExpenseBreakdown's own guard) -- leaving a
-              bordered, empty-feeling gap on the page whenever the component
-              hid itself internally. ExpenseBreakdown now owns its own
-              wrapper/spacing and returns null (including the border/margin)
-              when it has nothing trustworthy to show. */}
-          {apiOrg && <ExpenseBreakdown org={apiOrg} />}
+          {/* Standalone ExpenseBreakdown removed 2026-08-18: HowToHelp's "Where
+              your money goes" sub-section (in the What → Why → How flow above)
+              now carries the same total_expenses reconciliation guard this
+              component pioneered on 2026-08-16, so this would have been a
+              duplicate render for any org whose data reconciles. Component
+              file kept (unmounted) in case the guard logic is ever needed
+              standalone again. */}
 
           {/* Visibility Enhancement: Priority 6 — Financial Trends (2026-08-13)
               Shows 5-year revenue history + growth trajectory.
