@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-08-18: `git stash pop` used exploratorily popped an unrelated pre-existing stash entry
+
+**Symptom:** Ran `git stash` to test whether the working tree was clean (expecting "No local changes to save," which it correctly reported), then ran `git stash pop` as what was meant to be a no-op cleanup. It wasn't a no-op — the repo already had two old, unrelated stash entries sitting in the stack from much earlier sessions (`stash@{0}`: a WIP geolocation feature, `stash@{1}`: an .env-exclusion fix). `pop` always acts on the top of the stack regardless of who put it there or why, so it merged in `stash@{0}`'s changes on top of the current HEAD — a completely different feature branch's in-progress edits — producing merge conflicts across ~15 files, including one I'd genuinely edited that session (`FinancialContext.tsx`) and several I'd never touched (`V6FinancialContext.tsx`, assorted nonprofit-dashboard pages).
+
+**Root cause:** Treated `git stash` / `git stash pop` as a scratch "is anything dirty" check. It isn't one — `stash` only stashes if there's something to stash (safe), but `pop` unconditionally acts on whatever is already on the stack, which may have nothing to do with the current task or session. Never checked `git stash list` first.
+
+**Preventing rule:** Never run `git stash pop` (or `apply`) without first running `git stash list` to see what's actually on the stack and confirm it's yours / relevant to the current work. To check "is my working tree clean," use `git status --short` — never `git stash` for that purpose. If a stash op does land on the wrong content and produces conflicts, recovery is safe: the stash entry is preserved on a conflicted pop (never silently dropped), and `git checkout HEAD -- .` (or `git reset --hard HEAD` if no untracked files need preserving) cleanly discards the conflicted working tree — commit history is never at risk from a working-tree-only mess like this.
+
+---
+
 ## 2026-08-18: Production outage — missing `--preload` + smoke test that couldn't survive its own fix
 
 **Symptom:** daanaa.org returned 502/timeout for ~13 minutes across two
