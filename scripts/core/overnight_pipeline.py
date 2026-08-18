@@ -5,9 +5,21 @@ import time
 import sys
 import csv
 import json
+import os
 from pathlib import Path
 from datetime import datetime
 
+# 2026-08-18: this script lives in scripts/core/, but website_normalize.py
+# and registry_filters.py live one level up in scripts/ -- a folder-migration
+# leftover (same disease as ~8 other bugs found this week; see LESSONS.md).
+# The cron invocation (`cd ~/meritgiving && python3 scripts/core/overnight_pipeline.py`)
+# gives this script sys.path[0] = scripts/core/, not scripts/, so the bare
+# imports below failed with ModuleNotFoundError every night since the
+# migration -- confirmed via logs/overnight.log, meaning the daily scorer/
+# FTS-rebuild/stats-refresh job silently never ran. Self-contained fix
+# (adds scripts/ to sys.path relative to this file) rather than relying on
+# the caller setting PYTHONPATH correctly.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from website_normalize import normalize_website
 from registry_filters import DEDUCTIBLE_FILTER, canonical_active_count
 
