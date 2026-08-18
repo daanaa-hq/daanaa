@@ -105,6 +105,18 @@ precompute_archive/
 precompute_output/orgs/
 precompute_output/browse/
 
+# Regenerable precompute outputs, same class as faiss_index.bin/search.db
+# above — missing from this list until 2026-08-18 (task #17), which is why
+# commit 0345fd9b7c3 (an unrelated org-page feature) showed a confusing
+# diff deleting these. Confirmed both are write-only outputs, not required
+# inputs: cohort_context.json is precompute_cohort_context.py's own
+# documented Output; ein_map.json.gz is written by build_faiss_index.py
+# (runs weekly). content/*.json.gz is written by the content-precompute
+# step of the same pipeline family.
+precompute_output/cohort_context.json
+precompute_output/ein_map.json.gz
+precompute_output/content/
+
 # Firebase service account (private key — never commit)
 firebase-service-account.json
 firebase-service-account.json.odt
