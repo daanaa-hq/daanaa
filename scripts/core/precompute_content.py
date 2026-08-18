@@ -9,6 +9,7 @@ import sqlite3
 import json
 import gzip
 import os
+import sys
 from pathlib import Path
 from datetime import datetime
 
@@ -19,6 +20,11 @@ OUTPUT_DIR = os.path.join(os.environ.get("PRECOMPUTE_OUT", "precompute_output"),
 # registry_filters.py — import it so homepage stats can never drift from the
 # research snapshot / data-quality gate again. (Homepage stats describe the
 # nonprofits a donor can actually find and give a deductible gift to.)
+# 2026-08-18: this script lives in scripts/core/, registry_filters.py lives
+# one level up in scripts/ -- folder-migration leftover, same disease as
+# overnight_pipeline.py (see LESSONS.md, task #20). Self-contained sys.path
+# fix rather than relying on the caller's PYTHONPATH.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from registry_filters import DEDUCTIBLE_FILTER as DEDUCTIBLE
 
 
