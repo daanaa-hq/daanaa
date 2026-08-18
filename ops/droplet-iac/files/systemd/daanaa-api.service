@@ -5,6 +5,13 @@
 # precompute version, v2, that doesn't exist on disk — see snapshot
 # finding #2).
 #
+# --preload ADDED 2026-08-18: the live unit at pin time was missing it,
+# despite CLAUDE.md documenting --preload as the intended design (workers
+# share the embeddings allocation via CoW). Without it, each of the 3
+# workers independently loaded its own copy of 546K embeddings, which
+# exhausted the droplet's 7.8GB RAM + 2GB swap and caused a ~13-minute
+# outage. See LESSONS.md 2026-08-18 for the full incident.
+#
 # ONE INTENTIONAL DEVIATION FROM THE LIVE UNIT: the live ExecStart binds
 # gunicorn to BOTH 127.0.0.1:5000 (correct, nginx-only) AND 0.0.0.0:8880
 # (all interfaces, no TLS, no nginx in front — see snapshot finding #3).
@@ -26,7 +33,7 @@ Environment="DAANAA_PROD=1"
 ExecStartPre=-/usr/bin/pkill -TERM -f "gunicorn.*droplet_api:app"
 ExecStartPre=/bin/sleep 2
 ExecStartPre=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"
-ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 \
+ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 --preload \
   --timeout 120 --graceful-timeout 30 \
   --access-logfile /opt/daanaa/logs/access.log \
   --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \

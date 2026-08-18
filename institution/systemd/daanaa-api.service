@@ -12,7 +12,7 @@ Environment="DAANAA_PROD=1"
 ExecStartPre=-/usr/bin/pkill -TERM -f "gunicorn.*droplet_api:app"
 ExecStartPre=/bin/sleep 2
 ExecStartPre=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"
-ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 -b 0.0.0.0:8880 \
+ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 -b 0.0.0.0:8880 --preload \
   --timeout 120 --graceful-timeout 30 \
   --access-logfile /opt/daanaa/logs/access.log \
   --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \
