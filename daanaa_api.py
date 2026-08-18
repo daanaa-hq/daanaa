@@ -2654,6 +2654,17 @@ def get_organization(ein):
     if mor is not None and not (-120 <= mor <= 120):
         org['months_of_reserve'] = None
     org['total_revenue_formatted'] = f"${org['total_revenue']:,.0f}" if org['total_revenue'] else None
+    # Inferred revenue band for orgs with no full-form 990 filing on record
+    # (see migrations/026_revenue_band_estimate.sql + DECISIONS.md 2026-08-17).
+    # Only ever populated when total_revenue is empty -- never overrides a
+    # real reported figure. Explicitly labeled "estimated" per Charter
+    # Promise 7 ("we don't know enough," never presented as confirmed fact).
+    if not org.get('total_revenue') and org.get('revenue_band_estimate') == 'under_50k':
+        org['revenue_display'] = 'Under $50,000'
+        org['revenue_display_is_estimate'] = True
+    else:
+        org['revenue_display'] = org['total_revenue_formatted']
+        org['revenue_display_is_estimate'] = False
     org['has_mission'] = bool(org.get('mission') and str(org['mission']).strip())
     org['has_website'] = bool(org.get('website') and str(org['website']).strip())
     org['tax_deductible'] = _compute_tax_deductible(

@@ -9,7 +9,7 @@ import { formatCurrency, formatNumber } from '../data/organizations'
  * P4 (small org fairness), P5 (honest transparency), P9 (explainability).
  */
 export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
-  const hasFinancials = org.total_revenue !== null || org.months_of_reserve !== null
+  const hasFinancials = org.total_revenue !== null || org.months_of_reserve !== null || org.revenue_display_is_estimate
   const hasGovernance = org.leadership_info && (
     org.leadership_info.board_size || org.leadership_info.employee_count
   )
@@ -35,6 +35,12 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
                   <span className="font-body text-base font-medium text-deep-navy">{formatCurrency(org.total_revenue)}</span>
                 </div>
               )}
+              {org.total_revenue === null && org.revenue_display_is_estimate && (
+                <div className="flex justify-between items-baseline">
+                  <span className="font-body text-base text-cool-grey">Annual revenue</span>
+                  <span className="font-body text-base font-medium text-deep-navy italic">{org.revenue_display}</span>
+                </div>
+              )}
               {org.months_of_reserve !== null && (
                 <div className="flex justify-between items-baseline">
                   <span className="font-body text-base text-cool-grey">Months of reserves</span>
@@ -45,13 +51,18 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
               )}
             </div>
             <p className="font-body text-small text-cool-grey leading-relaxed">
-              {org.months_of_reserve === null
+              {org.total_revenue === null && org.months_of_reserve === null && org.revenue_display_is_estimate
+                ? "We don't know enough to say more about this organization's finances. No full IRS 990 filing is on record, consistent with a small organization's filing requirements. See something wrong? "
+                : org.months_of_reserve === null
                 ? 'This organization maintains a solid financial position to support their mission.'
                 : org.months_of_reserve < 0
                 ? 'This organization is managing through a challenging financial period but remains committed to their mission.'
                 : org.months_of_reserve < 3
                 ? 'This organization maintains modest reserves and is actively managing cash flow to continue their work.'
                 : 'This organization has built a solid financial cushion and can weather economic changes while continuing their mission.'}
+              {org.total_revenue === null && org.months_of_reserve === null && org.revenue_display_is_estimate && (
+                <a href="#mistake-registry" className="text-deep-navy underline hover:no-underline">Tell us</a>
+              )}
             </p>
           </div>
         )}

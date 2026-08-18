@@ -51,6 +51,11 @@ export interface ApiOrganization {
   STATE: string | null;
   total_revenue: number | null;
   total_revenue_formatted: string | null;
+  // Inferred revenue band for orgs with no full-form 990 filing on record.
+  // Only ever populated server-side when total_revenue is empty -- never
+  // overrides a real reported figure. See migrations/026_revenue_band_estimate.sql.
+  revenue_display: string | null;
+  revenue_display_is_estimate: boolean;
   ntee1_percentile: number | null;   // broad NTEE1 percentile (legacy compat)
   ntee1_total_orgs: number | null;   // total orgs in NTEE1 peer group
   source: string | null;

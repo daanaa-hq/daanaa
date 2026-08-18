@@ -1292,7 +1292,7 @@ export default function OrganizationDetail() {
       )}
 
       {/* Accountability Strip */}
-      <div className="border-t border-light-grey py-8">
+      <div id="mistake-registry" className="border-t border-light-grey py-8">
         <div className="space-y-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-12">
             <MistakeRegistry compact />
