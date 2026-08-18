@@ -4,6 +4,85 @@
 
 ---
 
+## 2026-08-18: Production outage — missing `--preload` + smoke test that couldn't survive its own fix
+
+**Symptom:** daanaa.org returned 502/timeout for ~13 minutes across two
+consecutive deploy attempts. `daanaa-api.service` was found consuming
+7.3GB RAM + 1.9GB swap (droplet has 7.8GB total) with only 145MB free.
+`sqlite3.OperationalError: database is locked` and `WORKER TIMEOUT ...
+SIGKILL! Perhaps out of memory?` appeared in the app error log going back
+to 03:35 UTC, hours before the deploy that surfaced it.
+
+**Root cause, three layered bugs:**
+
+1. **Missing `--preload` on `daanaa-api.service`'s gunicorn ExecStart.**
+   CLAUDE.md has documented "Uses `--preload` in gunicorn so workers share
+   the allocation via CoW" as the intended design for months, but the live
+   unit file never had the flag. Each of 3 workers independently loaded
+   its own full copy of 546K embeddings (1024-dim) — roughly 3x the
+   memory a shared preload would use — which is what actually exhausted
+   the droplet's RAM and swap. This was a pre-existing, silent condition;
+   nothing in that night's work introduced it, but two unrelated events
+   collided with it: a long-running unindexed DB write (below) held a
+   lock that made a request-triggered restart happen at a bad moment, and
+   a subsequent code deploy triggered two more restarts in the same
+   memory-starved state.
+2. **An unindexed correlated-subquery UPDATE against a live 25GB
+   production DB.** A data backfill (`UPDATE registry_enriched SET x =
+   (SELECT ... FROM staging WHERE staging.ein = registry_enriched.EIN)
+   WHERE EIN IN (SELECT ein FROM staging)`) ran for 26+ minutes without
+   committing, holding a write lock the whole time, because the temp
+   staging table had no index on the join column — full-table-scan-per-row
+   territory. Killed safely (zero rows had committed, verified before and
+   after). Rewritten with `CREATE INDEX ... ON staging(ein)` plus SQLite's
+   `UPDATE ... FROM` join syntax (3.33+): same 1.34M-row backfill,
+   2m15s instead of 26+ minutes and counting.
+3. **The deploy's own smoke test couldn't survive the fix for bug #1.**
+   `sync_droplet_api.sh`'s `smoke()` used `curl --max-time 90` per route,
+   which only bounds a *slow* response. With `--preload` now loading
+   embeddings in the master before forking workers (45-90s), every
+   request during that window gets an instant `502` from nginx (upstream
+   refused) — not a slow one. The smoke test ran ~8 seconds after
+   `systemctl restart` and failed immediately, every time, regardless of
+   whether the new code was correct. Its own rollback path had the exact
+   same bug, so the rollback's smoke check ALSO failed 8 seconds after
+   its restart — both the forward deploy and the safety-net rollback
+   reported failure back to back, even though the rollback's code was
+   fine. Real outage: ~13 minutes, of which ~11 were two premature smoke
+   checks racing a loading window that would have resolved on its own
+   within a minute.
+
+**A fourth, non-outage-causing gotcha found during recovery:** Cloudflare
+was caching org-detail API responses (`cache-control: max-age=3600`) from
+before the fix. Verifying a fix against `daanaa.org` directly after a
+deploy can show `cf-cache-status: HIT` and stale data even when the
+origin is correct — add a cache-busting query param (`?_cb=$(date +%s)`)
+when verifying a backend change immediately after shipping it, or the
+verification itself will report a false failure.
+
+**Preventing rule:**
+- Before writing a bulk UPDATE against a table with 100K+ target rows,
+  index the join/filter column first — a correlated subquery or an
+  unindexed `UPDATE...FROM` join is a full scan per row.
+- A deploy script's readiness check needs to tolerate the app's REAL
+  startup profile (here: `--preload`'s one-time embeddings load), not
+  just bound how long a single request can take. "Wait for readiness,
+  then smoke-test" and "smoke-test with a generous per-request timeout"
+  are not the same thing — the latter does nothing against a fast
+  connection-refused/502, only a slow response.
+- When a rollback path re-runs the same smoke/readiness logic as the
+  forward path, it inherits the forward path's bugs too — fix both call
+  sites, not just the one that failed first.
+- When verifying a fix on a CDN-fronted production site, always
+  cache-bust the verification request — a clean origin fix behind a
+  cache can look identical to a failed deploy from the outside.
+
+Fixed in `scripts/ops/sync_droplet_api.sh` (readiness poll added before
+both smoke() call sites) and `/etc/systemd/system/daanaa-api.service` on
+the droplet directly (`--preload` added, backed up pre-change unit file).
+
+---
+
 ## 2026-08-17: Manually-run stub script reported as real GPU discovery work
 
 **Symptom:** An earlier turn this session ran

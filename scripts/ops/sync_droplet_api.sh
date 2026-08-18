@@ -190,6 +190,31 @@ smoke() {
         'https://daanaa.org/api/organizations/521231983' 2>>"$LOG" | grep -q '^200$'
 }
 
+# Wait for the backend to actually be ready before the first smoke check.
+# 2026-08-18 incident: --max-time 90 on each curl only bounds a SLOW
+# response; it does nothing when nginx returns a fast 502 because gunicorn
+# isn't accepting connections yet. With --preload (added same incident,
+# see daanaa-api.service), the master process loads 546K embeddings before
+# forking workers -- routinely 45-90s -- during which every request gets an
+# instant 502, not a slow one. smoke() was failing in ~8s, long before the
+# real 90s budget was ever exercised, causing two outages in one deploy
+# attempt (the deploy's own smoke check, then the rollback's own smoke
+# check, both racing the same loading window). Poll for real readiness
+# first; the multi-route smoke() below still runs as the actual pass/fail
+# authority, this just stops it from being asked before there's anything
+# to check.
+log "Waiting for backend to accept connections (embeddings preload)..."
+READY=0
+for _i in $(seq 1 24); do
+    if curl -sS --max-time 5 -o /dev/null -w '%{http_code}' https://daanaa.org/ 2>>"$LOG" | grep -q '^200$'; then
+        READY=1
+        log "Backend responding after ${_i} probes (~$((_i * 5))s)."
+        break
+    fi
+    sleep 5
+done
+[ "$READY" = "1" ] || log "Backend still not responding after 120s -- proceeding to smoke() anyway, it will fail cleanly and trigger rollback."
+
 # Smoke runs UNCONDITIONALLY and decides the outcome. Previously a FAILED
 # is-active probe skipped smoke AND rollback — a genuinely broken deploy
 # would have been left live with only an error email.
@@ -202,7 +227,18 @@ else
     STATUS="FAILED"
     log "SMOKE TEST FAILED: homepage or search not serving. Rolling back to ${REMOTE_API}.prev..."
     if $SSH "test -f ${REMOTE_API}.prev && cp ${REMOTE_API}.prev $REMOTE_API && systemctl restart daanaa-api"; then
-        sleep 5
+        # Same readiness wait as the primary deploy above -- the rollback's
+        # own restart hits the identical embeddings-preload window. Without
+        # this, the rollback smoke check fails just as fast as the original
+        # did, and BOTH the deploy and its rollback report failure even
+        # though the rollback's code was actually fine (this happened
+        # 2026-08-18: real outage was ~13 minutes, ~11 of which were spent
+        # in two premature smoke checks, not real broken code).
+        log "Waiting for rollback backend to accept connections..."
+        for _i in $(seq 1 24); do
+            curl -sS --max-time 5 -o /dev/null -w '%{http_code}' https://daanaa.org/ 2>>"$LOG" | grep -q '^200$' && break
+            sleep 5
+        done
         if smoke; then
             log "Rollback OK — previous version restored and serving."
         else
