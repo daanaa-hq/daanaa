@@ -1,4 +1,5 @@
 import { ApiOrganization } from '../data/api'
+import { normalizeMissionCase } from '../data/organizations'
 
 /**
  * WhatTheyDo: Mission + Programs Section
@@ -24,7 +25,7 @@ export default function WhatTheyDo({ org }: { org: ApiOrganization }) {
       {hasMission && (
         <div className="mb-8">
           <p className="font-body text-base leading-relaxed text-deep-navy mb-2">
-            {org.mission}
+            {normalizeMissionCase(org.mission!)}
           </p>
           {org.mission_source && (
             <p className="font-body text-caption text-cool-grey">

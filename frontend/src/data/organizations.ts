@@ -504,6 +504,32 @@ export function formatEINInput(raw: string): string {
   return d.length > 2 ? `${d.slice(0, 2)}-${d.slice(2)}` : d
 }
 
+// Display-only sentence-case normalizer for mission text (2026-08-18, task #15).
+// Real IRS filings often store the exempt-purpose statement in ALL CAPS
+// ("TO IMPLEMENT AND ADMINISTER VARIOUS COMMUNITY ACTION PROGRAMS...") while
+// AI-generated/claimed missions are already properly cased -- both source
+// types render in the same WhatTheyDo section, so the mix reads as
+// inconsistent shouting next to normal prose. This transforms DISPLAY only;
+// it never mutates the stored mission (the raw IRS text is the evidence,
+// per Stewardship P3 -- normalizing storage would make the org's actual
+// filed wording unrecoverable). Only triggers on text that's actually
+// shouting (>=60% uppercase letters) -- leaves normal mixed-case text,
+// short acronym-heavy strings, and edge cases alone rather than guessing.
+export function normalizeMissionCase(mission: string): string {
+  const letters = mission.replace(/[^a-zA-Z]/g, '')
+  if (letters.length < 10) return mission
+  const upperCount = (letters.match(/[A-Z]/g) || []).length
+  if (upperCount / letters.length < 0.6) return mission
+
+  // Lowercase everything, then capitalize the first letter of the string
+  // and after each sentence-ending punctuation. This will lowercase
+  // genuine acronyms inside the sentence (e.g. "IRS" -> "irs") -- an
+  // accepted tradeoff: readable prose beats preserving mid-sentence
+  // acronym casing on text that was shouting to begin with.
+  const lowered = mission.toLowerCase()
+  return lowered.replace(/(^\s*\w|[.!?]\s+\w)/g, (m) => m.toUpperCase())
+}
+
 export function formatCurrency(value: number): string {
   const trim = (n: number, unit: string) => {
     const s = n.toFixed(1)
