@@ -78,7 +78,7 @@ nohup python3 scripts/continuous_discovery/domain_guess_engine.py \
 ## Handoff Documents Ready
 
 - **Droplet Recovery:** Check systemd logs, restart service
-- **Domain Guessing:** `CODEX_HANDOFF_DOMAIN_GUESSING_ENGINE_PRODUCTION_20260813.md`
+- **Domain Guessing:** `docs/operations/deployment/handoffs/CODEX_HANDOFF_DOMAIN_GUESSING_ENGINE_PRODUCTION_20260813.md`
 - **Monitoring:** `scripts/monitor_domain_guess.sh`
 
 ---

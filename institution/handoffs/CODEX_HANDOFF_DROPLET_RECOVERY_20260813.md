@@ -118,7 +118,7 @@ After recovery:
 
 Once you fix the droplet:
 - Report back: "Droplet recovered, /api/organizations returns data"
-- Then start: Domain guessing engine (`CODEX_HANDOFF_DOMAIN_GUESSING_ENGINE_PRODUCTION_20260813.md`)
+- Then start: Domain guessing engine (`docs/operations/deployment/handoffs/CODEX_HANDOFF_DOMAIN_GUESSING_ENGINE_PRODUCTION_20260813.md`)
 
 ---
 
