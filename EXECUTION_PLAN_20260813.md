@@ -85,7 +85,7 @@ git push -f origin master
 **What:** Implement dedup analysis findings
 
 **Checklist:**
-- [ ] Read `TASK10_WEBSITE_DISCOVERY_DEDUP_ANALYSIS_20260813.md`
+- [ ] Read `docs/projects/discovery/handoffs/TASK10_WEBSITE_DISCOVERY_DEDUP_ANALYSIS_20260813.md`
 - [ ] Confirm HTTP status distribution (87,039 active, 37,871 dead, etc.)
 - [ ] Confirm dedup classes (931 platform aggregators, 1,567 umbrella/chapter, 16,810 nulls)
 - [ ] Create `WEBSITE_DISCOVERY_DEDUP_RULES.md` with:
@@ -159,10 +159,10 @@ git push -f origin master
 ## Files Created Today
 
 ```
-✅ BATCH1_LOCAL_DEPLOYMENT_20260813.md
+✅ docs/operations/deployment/handoffs/BATCH1_LOCAL_DEPLOYMENT_20260813.md
    → Testing checklist + server status
    
-✅ TASK10_WEBSITE_DISCOVERY_DEDUP_ANALYSIS_20260813.md
+✅ docs/projects/discovery/handoffs/TASK10_WEBSITE_DISCOVERY_DEDUP_ANALYSIS_20260813.md
    → HTTP status distribution, dedup classes, coverage metrics
    → Umbrella/chapter mapping (PTK, KDP, BGS)
    → Null domain recovery strategy

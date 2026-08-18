@@ -242,7 +242,7 @@ If we know:
 
 ## If You Have Questions
 
-Check: `WEBSITE_DISCOVERY_COORDINATION_PLAN_20260813.md` (full coordination doc)
+Check: `docs/projects/discovery/handoffs/WEBSITE_DISCOVERY_COORDINATION_PLAN_20260813.md` (full coordination doc)
 
 Key insight: This is NOT a request to build the full acceleration yet — just diagnose the bottleneck and propose a fix. That lets us decide the right strategy before committing resources.
 

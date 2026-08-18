@@ -234,7 +234,7 @@ Connects to Task #11 (small org visibility roadmap).
 
 ## Files to Commit
 
-1. **This analysis** → `TASK10_WEBSITE_DISCOVERY_DEDUP_ANALYSIS_20260813.md`
+1. **This analysis** → `docs/projects/discovery/handoffs/TASK10_WEBSITE_DISCOVERY_DEDUP_ANALYSIS_20260813.md`
 2. **Verification data** → `data/website_discovery_verification_20260813.json`
 3. **Dedup rules** → `WEBSITE_DISCOVERY_DEDUP_RULES.md`
 

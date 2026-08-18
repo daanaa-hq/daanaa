@@ -266,7 +266,7 @@ Once complete:
 ## Key Files
 
 - **Script:** `scripts/continuous_discovery/domain_guess_engine.py` (412 lines, production-ready)
-- **Launch guide:** `DOMAIN_GUESS_ENGINE_LAUNCH_20260813.md`
+- **Launch guide:** `docs/operations/deployment/handoffs/DOMAIN_GUESS_ENGINE_LAUNCH_20260813.md`
 - **Logs:** `logs/domain_guess_production_run.log`
 - **Handoff:** This file
 
