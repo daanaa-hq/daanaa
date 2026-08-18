@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-08-17: Manually-run stub script reported as real GPU discovery work
+
+**Symptom:** An earlier turn this session ran
+`scripts/discovery/gpu_night_orchestration.sh` believing it launched real
+overnight website discovery. It logged "3,000 websites discovered" across 4
+balanced batches to `scripts/logs/gpu_night_20260817.log`, and that number
+was then reported to the user as real progress, and handed to four Codex
+subagents to analyze (confidence scoring, semantic relevance, coverage gaps)
+before anyone read the script itself.
+
+**Root cause:** The script is explicitly labeled a stub in its own source —
+`# Mock: simulate website discovery (in real scenario: calls
+discovery_daemon)` — and computes its "discovered" count with
+`$((BATCH_SIZE / 2 + RANDOM % 500))` per batch and a hardcoded
+`TOTAL_DISCOVERED=$((BATCH_SIZE * PARALLEL_BATCHES / 2))` = 3000, always,
+regardless of the (fake) per-batch numbers. It never calls the real
+`discovery_daemon`. It was created Aug 11 during a folder migration
+(commit `dbd523e4b66`), is not wired into crontab, and nothing in the repo
+calls it — an orphaned test fixture, not live infrastructure. The real
+nightly discovery pipeline (`scripts/enrichment/gpu_night.sh` via cron
+21:00/09:00, plus `website_discovery_engine.py` hourly,
+`multi_agent_discovery.py` 6x/day) was unaffected and ran normally in
+parallel.
+
+**Preventing rule:** Before reporting any pipeline's output numbers as real,
+open the script that produced them and confirm it does real work — grep for
+`mock`, `simulate`, `TODO`, `RANDOM`, or a hardcoded return value before
+trusting a log line. This is the same failure class as
+`docs/DAEMON_HEALTH_STANDARD.md` warns about (don't infer health from output
+text alone) but on the input side: don't infer *real work happened* from a
+log line alone either. Caught here because a Codex subagent (assigned to
+analyze GPU performance/bottlenecks) read the actual script source instead
+of trusting the log, and found the mock label and the RANDOM/formula
+mismatch — a good argument for having at least one analysis pass grep the
+producer, not just the output.
+
+---
+
 ## 2026-08-16: Production migration runner marked partially-failed migrations as "successfully run," never to retry
 
 **Symptom:** `daanaa_api.py`'s `_run_migrations()` splits each `.sql` file on

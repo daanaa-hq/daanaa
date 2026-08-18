@@ -1,5 +1,17 @@
 #!/bin/bash
-# GPU Night Work Orchestrator (10pm-6am)
+# ⚠️ STUB / MOCK — DOES NOT DO REAL DISCOVERY WORK. DO NOT RUN AS PRODUCTION.
+# Every "discovered" number below is $((BATCH_SIZE / 2 + RANDOM % 500)) —
+# random noise, not a real count. Never calls discovery_daemon or any real
+# discovery code. Not wired into crontab; orphaned from an Aug 11 folder
+# migration. See LESSONS.md 2026-08-17 for the incident this caused when an
+# earlier session ran it and reported its output as real.
+#
+# The real nightly GPU discovery orchestrator is scripts/enrichment/gpu_night.sh
+# (cron: 21:00 start / 09:00 stop). For real website discovery, see
+# scripts/discovery/website_discovery_engine.py (hourly cron) and
+# scripts/discovery/multi_agent_discovery.py (6x/day cron).
+#
+# GPU Night Work Orchestrator (10pm-6am) — ORIGINAL STUB HEADER BELOW
 # Target: +3,500 websites per night × 6 nights = +21,000 total
 
 set -e

@@ -24,7 +24,7 @@ start() {
   # Start independent embed server first — Phase 4 (web_finder_agent) depends on it.
   # This runs separately from mission generation so reembed issues don't block embeddings.
   echo "[$(ts)] start: launching embed_server (mxbai-embed-large on :11436)"
-  bash "$BASE/scripts/embed_server.sh" start
+  bash "$BASE/scripts/ops/embed_server.sh" start
 
   # match by port, not model basename — survives model swaps between edits
   if pgrep -f "llama-server.*--port ${PORT}" >/dev/null; then
@@ -92,11 +92,11 @@ start() {
   # Re-embed orgs whose mission was (re)written so semantic search stays current.
   # The watchdog runs its own embed server on :11436 (separate from the mission
   # model on :11437) and re-embeds once enough missions are stale, then idles.
-  if pgrep -f "scripts/reembed_watchdog.py" >/dev/null; then
+  if pgrep -f "scripts/enrichment/embeddings/reembed_watchdog.py" >/dev/null; then
     echo "[$(ts)] start: reembed_watchdog already running — skipping"
   else
     echo "[$(ts)] start: launching reembed_watchdog (re-embeds stale/new missions)"
-    nohup "$BASE/venv/bin/python3" "$BASE/scripts/reembed_watchdog.py" \
+    nohup "$BASE/venv/bin/python3" "$BASE/scripts/enrichment/embeddings/reembed_watchdog.py" \
       --threshold 5000 --interval 1800 >> "$LOG_DIR/reembed_watchdog.log" 2>&1 &
   fi
   echo "[$(ts)] start: done"
@@ -104,7 +104,7 @@ start() {
 
 start_exclusive() {
   echo "[$(ts)] start_exclusive: launching embed_server only (mission-gen/reembed paused for backlog clear)"
-  bash "$BASE/scripts/embed_server.sh" start
+  bash "$BASE/scripts/ops/embed_server.sh" start
 
   if pgrep -f "llama-server.*--port ${PORT}" >/dev/null; then
     echo "[$(ts)] start_exclusive: llama-server already running — skipping"
@@ -135,7 +135,7 @@ stop() {
   # pkill -f "scripts/enrich_cause_tags_llm.py" 2>/dev/null
   sleep 2
   echo "[$(ts)] stop: halting reembed_watchdog"
-  pkill -f "scripts/reembed_watchdog.py" 2>/dev/null
+  pkill -f "scripts/enrichment/embeddings/reembed_watchdog.py" 2>/dev/null
   echo "[$(ts)] stop: halting llama-server (mission generation)"
   # by port, not model basename — if MODEL was edited since start, the
   # basename match would miss the running server and leave the GPU busy
@@ -151,7 +151,7 @@ stop() {
   echo "[$(ts)] stop: rebuilding FTS index (new missions from tonight)"
   source "$BASE/venv/bin/activate"
   cd "$BASE" || exit 1
-  python3 scripts/build_fts_index.py --rebuild >> "$LOG_DIR/gpu_night.log" 2>&1 \
+  python3 scripts/search/build_fts_index.py --rebuild >> "$LOG_DIR/gpu_night.log" 2>&1 \
     && echo "[$(ts)] stop: FTS rebuild complete" \
     || echo "[$(ts)] stop: FTS rebuild FAILED — check logs"
 
@@ -182,7 +182,7 @@ stop_embed_server() {
     return 0
   fi
   echo "[$(ts)] stop_embed_server: halting embed_server (used by Phase 4)"
-  bash "$BASE/scripts/embed_server.sh" stop
+  bash "$BASE/scripts/ops/embed_server.sh" stop
 }
 
 case "${1:-}" in
