@@ -41,6 +41,15 @@ function formatRevenue(revenue: number): string {
 // confirmed correct and descriptive ("Donation-Funded Programs, Established,
 // national"), so it carries the peer-group description here instead of a
 // numeric count until a corrected table ships. See TODOS.md.
+//
+// 2026-08-18: rewritten to use this codebase's actual design-system tokens
+// (font-body/font-display, text-deep-navy/text-cool-grey) instead of raw
+// Tailwind (text-gray-500, unstyled text-lg font-semibold). The raw grays
+// read as washed-out/low-contrast against this page's cream background --
+// found during a responsive/readability audit, confirmed visually via
+// screenshot at both mobile and desktop widths. Every sibling component on
+// this page (WhyTrustThem, WhatTheyDo, HowToHelp) already used the design
+// tokens; this file was the one that never got migrated.
 export default function FinancialContext({ org }: FinancialContextProps) {
   const tier = org.scoring_tier
 
@@ -62,22 +71,22 @@ export default function FinancialContext({ org }: FinancialContextProps) {
 
     return (
       <div className="rounded-lg border border-cool-grey/20 bg-cool-grey/5 p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-3">Category context</h2>
+        <h2 className="font-display text-title-sm text-deep-navy mb-3">Category context</h2>
 
         {sector && (
-          <p className="text-sm text-gray-700 mb-2">
+          <p className="font-body text-small text-deep-navy mb-2">
             A <strong>{sector}</strong> organization.
           </p>
         )}
 
         {revenueSize && revenue !== null && (
-          <p className="text-sm text-gray-700 mb-3">
+          <p className="font-body text-small text-deep-navy mb-3">
             Latest reported annual revenue: <strong>{formatRevenue(revenue)}</strong>{' '}
             ({revenueSize} size range).
           </p>
         )}
 
-        <p className="text-xs text-gray-600 pt-4 border-t">
+        <p className="font-body text-caption text-cool-grey pt-4 border-t border-cool-grey/20">
           This is descriptive category context, not a peer comparison or financial score.
           A peer financial context is not available for this organization yet.
         </p>
@@ -90,30 +99,32 @@ export default function FinancialContext({ org }: FinancialContextProps) {
 
     return (
       <div className="rounded-lg border border-cool-grey/20 bg-cool-grey/5 p-6 mb-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">
+        <div className="flex flex-wrap justify-between items-center gap-2 mb-6">
+          <h2 className="font-display text-title-sm text-deep-navy">
             {isT1 ? 'Financial Context' : 'Financial Context (Broader Comparison)'}
           </h2>
-          <span className={`text-xs px-2 py-1 rounded ${isT1 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+          <span className={`font-body text-label px-2 py-1 rounded ${isT1 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
             {isT1 ? 'High confidence' : 'Good confidence'}
           </span>
         </div>
 
-        {/* Main content grid */}
-        <div className="grid grid-cols-3 gap-6">
+        {/* Main content grid -- stacks to 1 column below sm, 3 columns from
+            sm up. The previous grid-cols-3 with no responsive prefix packed
+            3 columns into a 375px-wide card at all times. */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div>
-            <p className="text-xs font-semibold text-gray-500 mb-1">Funding Model</p>
-            <p className="font-semibold mb-2">{org.merit_archetype_v5_label}</p>
-            <p className="text-xs text-gray-500 italic">{org.tier_label}</p>
+            <p className="font-body text-label tracking-[0.06em] text-cool-grey uppercase mb-1">Funding Model</p>
+            <p className="font-body text-small font-semibold text-deep-navy mb-2">{org.merit_archetype_v5_label}</p>
+            <p className="font-body text-caption text-cool-grey italic">{org.tier_label}</p>
           </div>
 
           {/* Reserves */}
           <div>
             {org.months_of_reserve !== null && org.months_of_reserve !== undefined && (
               <>
-                <p className="text-xs font-semibold text-gray-500 mb-1">Reserves</p>
-                <p className="font-semibold text-lg">{org.months_of_reserve.toFixed(1)} mo</p>
-                <p className="text-xs text-gray-500 mt-1">Months of operating expenses covered by unrestricted net assets</p>
+                <p className="font-body text-label tracking-[0.06em] text-cool-grey uppercase mb-1">Reserves</p>
+                <p className="font-body text-base font-semibold text-deep-navy">{org.months_of_reserve.toFixed(1)} mo</p>
+                <p className="font-body text-caption text-cool-grey mt-1">Months of operating expenses covered by unrestricted net assets</p>
               </>
             )}
           </div>
@@ -121,12 +132,12 @@ export default function FinancialContext({ org }: FinancialContextProps) {
           {/* Governance */}
           {org.board_size ? (
             <div>
-              <p className="text-xs font-semibold text-gray-500 mb-1">Governance</p>
-              <p className="font-semibold">{org.board_size} board members</p>
+              <p className="font-body text-label tracking-[0.06em] text-cool-grey uppercase mb-1">Governance</p>
+              <p className="font-body text-small font-semibold text-deep-navy">{org.board_size} board members</p>
               {org.nccs_program_ratio && (
                 <>
-                  <p className="text-xs text-gray-600 mt-3">Program Spending</p>
-                  <p className="font-semibold">{(org.nccs_program_ratio * 100).toFixed(0)}%</p>
+                  <p className="font-body text-caption text-cool-grey mt-3">Program Spending</p>
+                  <p className="font-body text-small font-semibold text-deep-navy">{(org.nccs_program_ratio * 100).toFixed(0)}%</p>
                 </>
               )}
             </div>
@@ -134,8 +145,8 @@ export default function FinancialContext({ org }: FinancialContextProps) {
         </div>
 
         {/* Footer caveat */}
-        {isT1 && <p className="text-xs text-gray-600 mt-4 pt-4 border-t">Data source: IRS Form 990 (this organization's filing), compared against similar organizations of the same type, size, and region.</p>}
-        {!isT1 && <p className="text-xs text-blue-600 mt-4 pt-4 border-t">Data source: IRS Form 990 (this organization's filing), compared against similar organizations nationally (the regional group was too small).</p>}
+        {isT1 && <p className="font-body text-caption text-cool-grey mt-4 pt-4 border-t border-cool-grey/20">Data source: IRS Form 990 (this organization's filing), compared against similar organizations of the same type, size, and region.</p>}
+        {!isT1 && <p className="font-body text-caption text-blue-700 mt-4 pt-4 border-t border-cool-grey/20">Data source: IRS Form 990 (this organization's filing), compared against similar organizations nationally (the regional group was too small).</p>}
       </div>
     )
   }
@@ -143,17 +154,17 @@ export default function FinancialContext({ org }: FinancialContextProps) {
   if (tier === '3_Broad_Category' || tier === '3b_Broad_Category') {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-3">Peer context (broader comparison)</h2>
-        <p className="text-xs text-amber-800 mb-3">The peer group for this organization's exact type and size was too small, so this compares against a wider category instead.</p>
-        <p className="text-xs text-gray-700 mb-3">
+        <h2 className="font-display text-title-sm text-deep-navy mb-3">Peer context (broader comparison)</h2>
+        <p className="font-body text-caption text-amber-800 mb-3">The peer group for this organization's exact type and size was too small, so this compares against a wider category instead.</p>
+        <p className="font-body text-small text-deep-navy mb-3">
           <strong>Funding Model:</strong> {org.merit_archetype_v5_label}
         </p>
         {org.tier_label && (
-          <p className="text-xs text-gray-700 mb-3">
+          <p className="font-body text-small text-deep-navy mb-3">
             <strong>Comparison group:</strong> {org.tier_label}
           </p>
         )}
-        <p className="text-xs text-gray-700">
+        <p className="font-body text-small text-deep-navy">
           <strong>We recommend asking them directly:</strong> Emergency reserve? Funding mix? How do they handle seasonal changes?
         </p>
       </div>
@@ -162,18 +173,18 @@ export default function FinancialContext({ org }: FinancialContextProps) {
 
   if (tier === '4_Archetype_Only') {
     return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-3">Descriptive context only</h2>
-        <p className="text-xs text-gray-700 mb-3">
+      <div className="rounded-lg border border-cool-grey/20 bg-cool-grey/5 p-6 mb-8">
+        <h2 className="font-display text-title-sm text-deep-navy mb-3">Descriptive context only</h2>
+        <p className="font-body text-small text-deep-navy mb-3">
           We don't have enough detailed financial data from their IRS filings for a peer comparison yet. That's not a reflection on their quality — many grassroots and newer organizations file simplified forms.
         </p>
-        <p className="text-xs text-gray-700 mb-4">
+        <p className="font-body text-small text-deep-navy mb-4">
           <strong>Funding Model:</strong> {org.merit_archetype_v5_label} (typically rely on community support, fundraising, and grants)
         </p>
-        <p className="text-xs text-gray-700">
+        <p className="font-body text-small text-deep-navy">
           <strong>The best source is direct:</strong>
         </p>
-        <ul className="text-xs text-gray-700 mt-2 ml-4 list-disc">
+        <ul className="font-body text-small text-deep-navy mt-2 ml-4 list-disc">
           <li>Do they maintain an operating reserve?</li>
           <li>What's their funding mix?</li>
           <li>How do they handle cash flow challenges?</li>
