@@ -1184,7 +1184,7 @@ export default function OrganizationDetail() {
                       </tbody>
                     </table>
                     <p className="mt-4 font-body text-caption text-cool-grey">
-                      Source: ProPublica Nonprofit Explorer · Government annual financial reports
+                      Source: IRS Form 990 filings, via GuideStar/ProPublica indexes and direct IRS data · Government annual financial reports
                     </p>
                   </div>
                 )}
