@@ -4,8 +4,6 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import FinancialHistoryTable from '../components/FinancialHistoryTable'
 import AnswerCard from '../components/AnswerCard'
-import { IrsEligibilityContext } from '../components/IrsEligibilityContext'
-import { taxDeductibleToStatus } from '../utils/taxDeductible'
 import Breadcrumb from '../components/Breadcrumb'
 import DonationReturnPrompt from '../components/DonationReturnPrompt'
 import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
@@ -757,14 +755,15 @@ export default function OrganizationDetail() {
                 )}
               </div>
 
-              {/* Quick verification: legit/deductible/healthy + IRS status */}
+              {/* Quick verification: legit/healthy signals + data-gap notes.
+                  Tax status ("Tax deductible" / "Tax status not available")
+                  moved into the badge row below (2026-08-18) -- it used to
+                  render here too as a full badge+paragraph+sources box
+                  (IrsEligibilityContext), saying the same thing the badge
+                  row and the "Why should you trust them?" section further
+                  down already say, just more verbosely and higher up. */}
               <div className="mt-6 sm:mt-8 space-y-3">
                 {apiOrg! && <AnswerCard org={apiOrg!} />}
-                {apiOrg! && <IrsEligibilityContext
-                  status={taxDeductibleToStatus(apiOrg!.tax_deductible)}
-                  checkedAt={apiOrg!.tax_deductible_checked_at}
-                  organizationName={apiOrg!.organization_name}
-                />}
                 {apiOrg! && <DataContextNote org={apiOrg!} />}
               </div>
 
@@ -925,14 +924,13 @@ export default function OrganizationDetail() {
                   (founder-approved): its facts are covered by the plain
                   elements below, and the tier vocabulary read as a grade
                   (P4). Tiers live on in the nonprofit-facing claim flow. */}
-              {/* IRS verification -- a real, defensible fact for every org */}
+              {/* IRS verification -- a real, defensible fact for every org.
+                  "Annual report filed · {year}" line removed 2026-08-18: it
+                  said the same thing as the "990 filed · FY {year}" badge
+                  in the row above (both read org.latest_tax_year), just in
+                  a second place. */}
               <div className="space-y-1">
                 <p className="font-body text-caption font-medium text-success-green">✓ Registered US Nonprofit</p>
-                {apiOrg!.latest_tax_year && (
-                  <p className="font-body text-label text-muted-cream">
-                    Annual report filed · {apiOrg!.latest_tax_year}
-                  </p>
-                )}
                 {/* Claimed / Unclaimed badge -- Yelp-style */}
                 {apiOrg!.claim_status === 'active' ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-soft-gold/50 text-soft-gold font-body text-label font-medium">

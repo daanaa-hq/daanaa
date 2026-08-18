@@ -26,6 +26,15 @@ export function getSectorName(ntee1: string | null): string {
   return SECTOR_NAMES[(ntee1 || '').toUpperCase()] || 'nonprofit'
 }
 
+// Shared with AnswerCard.tsx (moved here 2026-08-18 so both the "since year"
+// badge below and AnswerCard's no-data banner read the same parsed year from
+// one place, instead of two copies of the same 3-line date parse drifting).
+export function rulingYear(ruling_date: string | null): string | null {
+  if (!ruling_date) return null
+  const year = ruling_date.slice(0, 4)
+  return /^\d{4}$/.test(year) ? year : null
+}
+
 export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   const badges: OrgBadge[] = []
   const score = org.peer_percentile ?? org.ntee1_percentile
@@ -67,6 +76,41 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
       source: 'IRS Business Master File + IRS Auto-Revocation List',
       color: 'green',
       icon: 'check-shield',
+    })
+  } else if (org.tax_deductible !== false) {
+    // 2026-08-18: consolidates what used to be the hero's separate
+    // IrsEligibilityContext block (badge + paragraph + sources list) into
+    // one badge here, for the genuine-data-gap case (tax_deductible is
+    // null/undefined -- NOT the revoked case, tax_deductible === false,
+    // which AnswerCard's RevokedBanner already covers with real prominence
+    // and must keep exclusive ownership of, per the 2026-08-15 fix above:
+    // showing this badge AND a contradicting "not deductible" statement at
+    // once was the actual bug, not the badge existing at all). Only one
+    // tax-status surface renders per org now.
+    badges.push({
+      id: 'tax_status_unknown',
+      label: 'Tax status not available',
+      detail: 'We do not have current IRS deductibility data for this organization. Confirm directly with the organization or IRS before assuming a contribution is tax deductible.',
+      source: 'IRS Business Master File + IRS Auto-Revocation List',
+      color: 'gold',
+      icon: 'file-text',
+    })
+  }
+
+  // 1b. Since {year} — the org's IRS ruling date, pulled out of AnswerCard's
+  // always-expanded banner sentence into a badge, consistent with everything
+  // else in this row. Shown regardless of financial-context/scoring status;
+  // founding year is a plain fact any donor might want, not just a
+  // thin-data fallback.
+  const since = rulingYear(org.ruling_date)
+  if (since) {
+    badges.push({
+      id: 'since_year',
+      label: `Since ${since}`,
+      detail: `Registered as a 501(c)(3) since ${since}, per IRS records.`,
+      source: 'IRS Business Master File',
+      color: 'gold',
+      icon: 'star',
     })
   }
 

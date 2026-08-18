@@ -7,6 +7,7 @@
 // This card handles basic public-record status. v6 financial context is rendered
 // separately below it so every organization follows the same presentation.
 import type { ApiOrganization } from '../data/api'
+import { rulingYear } from '../utils/badges'
 
 interface AnswerCardProps {
   org: ApiOrganization
@@ -20,12 +21,6 @@ const HEALTH_COPY: Record<string, { label: string; chipClass: string; textClass:
 
 function isRevoked(org: ApiOrganization): boolean {
   return org.org_status === 'revoked' || org.irs_revoked === 1
-}
-
-function rulingYear(ruling_date: string | null): string | null {
-  if (!ruling_date) return null
-  const year = ruling_date.slice(0, 4)
-  return /^\d{4}$/.test(year) ? year : null
 }
 
 function RevokedBanner({ org }: { org: ApiOrganization }) {
@@ -94,17 +89,18 @@ function HealthChips({ org }: { org: ApiOrganization }) {
 // gap explanation), and it read as three stacked disclaimers before any real
 // content. Now this only says something when it has something distinct to
 // add: the real "no financial score" gap (when scoring_tier is genuinely
-// absent -- Stewardship P3, we still say so) and/or the ruling year fact.
-// Renders nothing when neither applies, rather than an empty-feeling box.
+// absent -- Stewardship P3, we still say so). Renders nothing otherwise,
+// rather than an empty-feeling box.
+//
+// Consolidated further 2026-08-18: the ruling-year fact this banner used to
+// also carry ("Doing the work since {year}") is now a "Since {year}" badge
+// in the row below instead (utils/badges.ts) -- same fact, one surface, not
+// a badge row AND a banner both saying it.
 function NoDataBanner({ org }: { org: ApiOrganization }) {
-  const year = rulingYear(org.ruling_date)
   const hasFinancialContext = !!org.scoring_tier
   const parts: string[] = []
   if (!hasFinancialContext) {
     parts.push("We don't have enough IRS financial data yet to compare this organization against its peers.")
-  }
-  if (year) {
-    parts.push(`Doing the work since ${year}.`)
   }
   if (parts.length === 0) return null
   return (
