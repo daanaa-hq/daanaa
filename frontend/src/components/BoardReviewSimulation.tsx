@@ -1,5 +1,6 @@
 import React from 'react'
 import type { ApiOrganization } from '../data/api'
+import { getReconciledExpenseAllocation } from '../utils/expenseAllocation'
 
 /**
  * BoardReviewSimulation component
@@ -28,43 +29,45 @@ function generateBoardAssessment(org: ApiOrganization): BoardAssessment {
   
   // Strength: Good financial reserves
   if (org.months_of_reserve !== null && org.months_of_reserve >= 6) {
-    strengths.push(`${Math.round(org.months_of_reserve)} months of financial reserves — strong cushion for stability`)
-    dataPoints++
-  }
-  
-  // Concern: Low reserves
-  if (org.months_of_reserve !== null && org.months_of_reserve > 0 && org.months_of_reserve < 3) {
-    concerns.push(`Only ${Math.round(org.months_of_reserve)} months of reserves — limited financial cushion for unexpected changes`)
-    dataPoints++
-  }
-  
-  // Concern: Negative net assets
-  if (org.months_of_reserve !== null && org.months_of_reserve < 0) {
-    concerns.push('Operating with negative net assets — structural financial challenge')
-    dataPoints++
-  }
-  
-  // Strength: High program spend
-  if (org.program_expense_pct !== undefined && org.program_expense_pct !== null && org.program_expense_pct >= 75) {
-    strengths.push(`${Math.round(org.program_expense_pct)}% of budget goes to programs — mission-focused spending`)
+    strengths.push(`${Math.round(org.months_of_reserve)} months of financial reserves. A strong cushion for stability.`)
     dataPoints++
   }
 
-  // Concern: Low program spend
-  if (org.program_expense_pct !== undefined && org.program_expense_pct !== null && org.program_expense_pct < 50) {
-    concerns.push(`Only ${Math.round(org.program_expense_pct)}% of budget goes to programs — high overhead`)
+  // Concern: Low reserves
+  if (org.months_of_reserve !== null && org.months_of_reserve > 0 && org.months_of_reserve < 3) {
+    concerns.push(`Only ${Math.round(org.months_of_reserve)} months of reserves. Limited financial cushion for unexpected changes.`)
+    dataPoints++
+  }
+
+  // Concern: Negative net assets
+  if (org.months_of_reserve !== null && org.months_of_reserve < 0) {
+    concerns.push('Operating with negative net assets. A structural financial challenge.')
+    dataPoints++
+  }
+
+  // Strength/concern: program spend. Data-integrity guard shared with
+  // HowToHelp.tsx (utils/expenseAllocation.ts) -- this used to read raw
+  // org.program_expense_pct directly, the same unguarded-field bug class
+  // as the 2026-08-16 incident (found via Codex review 2026-08-19).
+  const { reconciles, programPct } = getReconciledExpenseAllocation(org)
+  if (reconciles && programPct !== null && programPct >= 75) {
+    strengths.push(`${programPct}% of budget goes to programs. Mission-focused spending.`)
+    dataPoints++
+  }
+  if (reconciles && programPct !== null && programPct < 50) {
+    concerns.push(`Only ${programPct}% of budget goes to programs. High overhead.`)
     dataPoints++
   }
 
   // Strength: Solid board
   if (org.board_size !== undefined && org.board_size !== null && org.board_size >= 5) {
-    strengths.push(`Board of ${org.board_size} members — governance structure in place`)
+    strengths.push(`Board of ${org.board_size} members. Governance structure in place.`)
     dataPoints++
   }
 
   // Strength: Staff present
   if (org.employee_count !== undefined && org.employee_count !== null && org.employee_count > 0) {
-    strengths.push(`${org.employee_count} full-time ${org.employee_count === 1 ? 'employee' : 'employees'} — organized operations`)
+    strengths.push(`${org.employee_count} full-time ${org.employee_count === 1 ? 'employee' : 'employees'}. Organized operations.`)
     dataPoints++
   }
   

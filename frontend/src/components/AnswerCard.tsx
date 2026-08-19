@@ -7,16 +7,9 @@
 // This card handles basic public-record status. v6 financial context is rendered
 // separately below it so every organization follows the same presentation.
 import type { ApiOrganization } from '../data/api'
-import { rulingYear } from '../utils/badges'
 
 interface AnswerCardProps {
   org: ApiOrganization
-}
-
-const HEALTH_COPY: Record<string, { label: string; chipClass: string; textClass: string }> = {
-  HEALTHY: { label: 'Financially steady', chipClass: 'bg-emerald-500/15 border-emerald-500/25', textClass: 'text-emerald-300' },
-  STABLE: { label: 'Managing well', chipClass: 'bg-blue-500/10 border-blue-500/20', textClass: 'text-blue-300' },
-  CAUTION: { label: 'Could use community support', chipClass: 'bg-alert-amber/50/10 border-amber-500/20', textClass: 'text-amber-300' },
 }
 
 function isRevoked(org: ApiOrganization): boolean {
@@ -47,75 +40,19 @@ function RevokedBanner({ org }: { org: ApiOrganization }) {
   )
 }
 
-function HealthChips({ org }: { org: ApiOrganization }) {
-  const score = org.v5_context?.score
-  const signal = score?.health_signal ? HEALTH_COPY[score.health_signal] : null
-  return (
-    <div className="mt-6 space-y-4">
-      <div className="flex flex-wrap gap-3">
-        {org.program_expense_pct != null && org.program_expense_pct > 0 && (
-          <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
-            <span className="font-display text-headline text-warm-cream leading-none">
-              {org.program_expense_pct.toFixed(0)}¢
-            </span>
-            <span className="font-body text-label text-muted-cream text-center mt-1">per dollar to programs</span>
-          </div>
-        )}
-        {signal && score?.percentile != null && (
-          <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
-            <span className="font-display text-headline text-warm-cream leading-none">
-              Top {Math.max(1, 100 - score.percentile)}%
-            </span>
-            <span className="font-body text-label text-muted-cream text-center mt-1">of peer nonprofits</span>
-          </div>
-        )}
-        {signal && (
-          <div className={`flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl border min-w-[130px] ${signal.chipClass}`}>
-            <span className={`font-body text-small font-semibold leading-none ${signal.textClass}`}>
-              {signal.label}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// Consolidated 2026-08-16: this banner used to always show a self-referential
-// sentence ("Tax deductibility is shown separately... V6 peer financial
-// context appears below") that just described the rest of the page's own
-// layout back to the reader -- redundant with IrsEligibilityContext right
-// below it (tax status) and FinancialContext further down (the actual score
-// gap explanation), and it read as three stacked disclaimers before any real
-// content. Now this only says something when it has something distinct to
-// add: the real "no financial score" gap (when scoring_tier is genuinely
-// absent -- Stewardship P3, we still say so). Renders nothing otherwise,
-// rather than an empty-feeling box.
+// Consolidated 2026-08-16 and 2026-08-18: this used to also carry a
+// "no financial score yet" sentence (NoDataBanner) and a "Since {year}"
+// fact. The year moved to a badge in the row below (utils/badges.ts,
+// 2026-08-18). The "no financial score" sentence is removed entirely as of
+// 2026-08-19 (Codex review): it triggered on the exact same condition
+// (!org.scoring_tier) as FinancialContext.tsx's own "Category context" box
+// further down the page, which explains the same gap at greater length --
+// a donor saw the identical fact twice. One surface now, not two.
 //
-// Consolidated further 2026-08-18: the ruling-year fact this banner used to
-// also carry ("Doing the work since {year}") is now a "Since {year}" badge
-// in the row below instead (utils/badges.ts) -- same fact, one surface, not
-// a badge row AND a banner both saying it.
-function NoDataBanner({ org }: { org: ApiOrganization }) {
-  const hasFinancialContext = !!org.scoring_tier
-  const parts: string[] = []
-  if (!hasFinancialContext) {
-    parts.push("We don't have enough IRS financial data yet to compare this organization against its peers.")
-  }
-  if (parts.length === 0) return null
-  return (
-    <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-white/8 border border-white/12">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
-        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-      </svg>
-      <p className="font-body text-small text-muted-cream leading-[1.55]">
-        {parts.join(' ')}
-      </p>
-    </div>
-  )
-}
-
+// (HEALTH_COPY / a HealthChips-style peer-percentile display used to live
+// here too but was dead code -- defined, never rendered, verified via
+// grep before removal 2026-08-19.)
 export default function AnswerCard({ org }: AnswerCardProps) {
   if (isRevoked(org)) return <RevokedBanner org={org} />
-  return <NoDataBanner org={org} />
+  return null
 }

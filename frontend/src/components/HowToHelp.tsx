@@ -1,5 +1,6 @@
 import { ApiOrganization } from '../data/api'
 import { formatCurrency, formatNumber } from '../data/organizations'
+import { getReconciledExpenseAllocation } from '../utils/expenseAllocation'
 
 /**
  * HowToHelp: Impact Story + Expense Allocation
@@ -18,25 +19,15 @@ export default function HowToHelp({ org }: { org: ApiOrganization }) {
     return null
   }
 
-  // Data-integrity guard (ported from ExpenseBreakdown.tsx, 2026-08-16 incident:
-  // a partner org flagged this exact breakdown as wrong during a demo).
-  // registry_enriched.program_expenses/management_expenses/fundraising_expenses
-  // trace back to a legacy irs_soi ingestion pass and, for a large share of orgs,
-  // do NOT reconcile with the verified-correct total_expenses field -- commonly
-  // summing to ~2x the real total. Cross-check against total_expenses and refuse
-  // to render percentages we can't verify, rather than showing wrong numbers
-  // with a false confidence sentence attached. See DECISIONS.md 2026-08-16.
-  const programExpensesRaw = org.program_expenses ?? 0
-  const managementExpensesRaw = org.management_expenses ?? 0
-  const fundraisingExpensesRaw = org.fundraising_expenses ?? 0
-  const partsSum = programExpensesRaw + managementExpensesRaw + fundraisingExpensesRaw
-  const verifiedTotal = org.total_expenses
-  const reconciles = !!verifiedTotal && verifiedTotal > 0 && partsSum > 0
-    && Math.abs(partsSum - verifiedTotal) <= 0.2 * verifiedTotal
-
-  const programPct = reconciles ? Math.round((programExpensesRaw / partsSum) * 100) : 0
-  const adminPct = reconciles ? Math.round((managementExpensesRaw / partsSum) * 100) : 0
-  const fundraisingPct = reconciles ? Math.round((fundraisingExpensesRaw / partsSum) * 100) : 0
+  // Data-integrity guard -- see utils/expenseAllocation.ts for why this
+  // exists (2026-08-16 incident) and why it's a shared function, not an
+  // inline copy (2026-08-19: BoardReviewSimulation.tsx was found using the
+  // unguarded raw field, the same bug class as the original incident).
+  const { reconciles, programPct: programPctOrNull, adminPct: adminPctOrNull, fundraisingPct: fundraisingPctOrNull } =
+    getReconciledExpenseAllocation(org)
+  const programPct = programPctOrNull ?? 0
+  const adminPct = adminPctOrNull ?? 0
+  const fundraisingPct = fundraisingPctOrNull ?? 0
 
   return (
     <section className="mb-6 py-6 md:py-8 border-b border-cool-grey/20">
