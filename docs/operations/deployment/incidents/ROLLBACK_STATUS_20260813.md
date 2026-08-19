@@ -37,7 +37,7 @@
 
 1. **Investigate QA failures** — Identify root cause of console errors and failed requests
 2. **Fix locally** — Apply fixes incrementally with local testing
-3. **Establish review pattern** — Use CODEX_REVIEW_GATE.md workflow before redeploying
+3. **Establish review pattern** — Use docs/operations/engineering/review/CODEX_REVIEW_GATE.md workflow before redeploying
 4. **Reapply Batch 1 safely** — P1 fixes first, then UX features, testing as we go
 5. **Deploy when verified** — Full Playwright + browser verification before production
 

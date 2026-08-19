@@ -162,7 +162,7 @@ This package delivers:
 - [x] Risk Register compiled
 - [x] Public Commitments audited
 - [x] Spending Policy drafted
-- [x] GOVERNANCE_PLAYBOOK.md published
+- [x] ../GOVERNANCE_PLAYBOOK.md published
 
 **Status:** Ready to implement immediately
 
@@ -232,7 +232,7 @@ This package delivers:
 4. **P6_PEER_REVIEW_CHALLENGE.md** — Peer validation results
 5. **P2_FINDINGS_PHASE1.md** — Auth assessment + alternatives
 6. **P11_FINDINGS_PHASE1.md** — Succession drafts
-7. **GOVERNANCE_PLAYBOOK.md** — ← START HERE (7 pages, Founder-ready)
+7. **../GOVERNANCE_PLAYBOOK.md** — ← START HERE (7 pages, Founder-ready)
 8. **GOVERNANCE_EXPANSION_REVIEW.md** — Codex + Priori review
 9. **This file: DELIVERY_PACKAGE.md** — Master handoff document
 
@@ -240,7 +240,7 @@ This package delivers:
 
 ## QUICK START (For Founder)
 
-1. **Read first (15 min):** GOVERNANCE_PLAYBOOK.md (sections 1-4)
+1. **Read first (15 min):** ../GOVERNANCE_PLAYBOOK.md (sections 1-4)
 2. **Review summary (10 min):** PHASE1_FINDINGS_CONSOLIDATED.md
 3. **This week (3-6h):** Approve emergency fixes (Cron + Inference + Watchdog)
 4. **Next week (2h):** Review P11 succession drafts + P2 recommendation
