@@ -30,8 +30,10 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
       .catch(() => { /* SW registration is best-effort */ });
   });
 }
-import '@fontsource/playfair-display/400.css'
-import '@fontsource/playfair-display/400-italic.css'
+// Playfair Display import removed 2026-08-18 (perf): not referenced by any
+// font-family declaration in index.css (grepped to confirm) -- pure dead
+// weight on every page load. Inter stays: it's the offline-safe local
+// fallback for 'DM Sans' if the Google Fonts request fails, used by the PWA.
 import '@fontsource/inter/400.css'
 import '@fontsource/inter/500.css'
 import '@fontsource/inter/600.css'
