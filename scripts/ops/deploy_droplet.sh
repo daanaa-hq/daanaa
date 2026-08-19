@@ -11,7 +11,7 @@ ARCHIVE="$1"
 CHECKSUM="${ARCHIVE}.sha256"
 DATA_DIR="/data/precompute"
 BACKUP_DIR="/data/backups"
-API_SERVICE="daanaa"
+API_SERVICE="daanaa-api"
 
 if [ -z "$ARCHIVE" ] || [ ! -f "$ARCHIVE" ]; then
     echo "ERROR: Archive not found: $ARCHIVE"
