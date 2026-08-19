@@ -37,7 +37,17 @@
     --bright-gold-rgb: 212 184 122;
     --pale-gold-rgb: 232 213 163;
     --muted-cream-rgb: 212 204 191;
-    --cool-grey-rgb: 160 175 195;
+    /* 2026-08-19: darkened from 160 175 195 (#A0AFC3) -- computed 1.97:1
+       against warm-cream (245 240 235) and 2.23:1 against white, both
+       well under WCAG AA's 4.5:1 body-text floor. This token is used
+       site-wide (25-34+ times across Directory, Wallet, Methodology,
+       Governance, org pages, etc.) as secondary/muted body text on light
+       backgrounds, never spot-checked against a dark background in a
+       sample of its usage sites, so darkening it fixes contrast broadly
+       without a known regression. New value: 5.05:1 vs warm-cream,
+       5.71:1 vs white -- clears AA with margin, same hue direction.
+       Found via Codex contrast review. */
+    --cool-grey-rgb: 83 104 131;
     --light-cream-rgb: 237 232 224;
     --light-grey-rgb: 229 224 219;
     --deep-gold-rgb: 200 165 95;

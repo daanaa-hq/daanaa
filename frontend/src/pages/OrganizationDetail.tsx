@@ -1375,7 +1375,7 @@ export default function OrganizationDetail() {
                 )
               })}
             </div>
-            <p className="mt-6 font-body text-caption text-muted-cream">
+            <p className="mt-6 font-body text-caption text-cool-grey">
               Sign-ups are handled by the organization directly. Daanaa does not collect volunteer information.
             </p>
           </div>
