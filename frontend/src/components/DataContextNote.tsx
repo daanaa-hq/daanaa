@@ -78,20 +78,20 @@ export default function DataContextNote({ org }: DataContextNoteProps) {
           </p>
 
           <p className="text-amber-800">
-            Many grassroots and community-based nonprofits—especially smaller or newer ones—haven't filed the detailed financial forms we use for peer comparison. That tells us about filing status, not quality or management.
+            Many grassroots nonprofits rooted in their community, especially smaller or newer ones, haven't filed the detailed financial forms we use for peer comparison. That tells us about filing status, not quality or management.
           </p>
 
           <div className="bg-white/60 p-3 rounded border border-amber-100">
             <p className="font-semibold mb-2 text-amber-900">What this means for you:</p>
             <ul className="space-y-1 text-amber-800 text-xs">
               <li>
-                • <strong>Their impact isn't determined by revenue size</strong> — small can mean nimble and community-rooted
+                • <strong>Their impact isn't determined by revenue size.</strong> Small can mean nimble and rooted in community.
               </li>
               <li>
-                • <strong>Their financial stability could be excellent</strong> — we just don't have the data yet
+                • <strong>Their financial stability could be excellent.</strong> We just don't have the data yet.
               </li>
               <li>
-                • <strong>Their own financial story is the best source</strong> — reach out and ask
+                • <strong>Their own financial story is the best source.</strong> Reach out and ask.
               </li>
             </ul>
           </div>
