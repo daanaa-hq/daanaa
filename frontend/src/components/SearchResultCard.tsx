@@ -58,11 +58,9 @@ function extractWhyMatches(org: ApiOrganization): WhyMatchesFact[] {
 }
 
 export default function SearchResultCard({
-  org,
-  highlight
+  org
 }: {
   org: ApiOrganization
-  highlight?: string
 }) {
   const whyMatches = extractWhyMatches(org)
   const orgLink = `/org/${org.EIN}`
