@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { ApiOrganization } from '../data/api'
-import { formatCurrency } from '../data/organizations'
 
 /**
  * SearchResultCard — "Why this matches" inline on search results
@@ -20,15 +19,10 @@ interface WhyMatchesFact {
 function extractWhyMatches(org: ApiOrganization): WhyMatchesFact[] {
   const facts: WhyMatchesFact[] = []
 
-  // Fact 1: Mission or impact
-  if (org.mission) {
-    facts.push({
-      text: org.mission.length > 100 ? org.mission.substring(0, 100) + '…' : org.mission,
-      source: org.mission_attribution?.source_explanation ? 'From 990 filing' : 'From website'
-    })
-  }
+  // Skip mission — it's already shown as lead content above.
+  // Only show unique facts not visible elsewhere on the card.
 
-  // Fact 2: Geographic reach
+  // Fact 1: Geographic reach
   const serviceStates = org.service_scope?.service_states || []
   if (serviceStates.length > 0 || org.STATE) {
     const location =
@@ -66,66 +60,61 @@ export default function SearchResultCard({
   const orgLink = `/org/${org.EIN}`
 
   return (
-    <Link to={orgLink}>
-      <article className="border border-light-grey rounded-lg p-5 bg-white hover:shadow-md transition-shadow duration-200">
-        {/* Header: Name + Location */}
-        <div className="mb-3">
-          <h3 className="font-body text-base font-semibold text-deep-navy hover:text-soft-gold transition-colors">
-            {org.organization_name}
-          </h3>
-          <p className="font-body text-small text-cool-grey">
-            {org.CITY && org.STATE ? `${org.CITY}, ${org.STATE}` : org.STATE || 'Location not available'}
+    <article className="border border-light-grey rounded-lg p-5 bg-white hover:shadow-md transition-shadow duration-200">
+      {/* Clickable Header Area */}
+      <Link to={orgLink} className="block group">
+        <h3 className="font-body text-base font-semibold text-deep-navy group-hover:text-soft-gold transition-colors">
+          {org.organization_name}
+        </h3>
+        <p className="font-body text-small text-cool-grey">
+          {org.CITY && org.STATE ? `${org.CITY}, ${org.STATE}` : org.STATE || 'Location not available'}
+        </p>
+      </Link>
+
+      {/* Mission snippet */}
+      {org.mission && (
+        <p className="font-body text-small text-cool-grey leading-relaxed mb-4 mt-3">
+          {org.mission.length > 140 ? org.mission.substring(0, 140) + '…' : org.mission}
+        </p>
+      )}
+
+      {/* Why This Matches Section */}
+      {whyMatches.length > 0 && (
+        <div className="bg-gradient-to-r from-soft-gold/8 to-transparent border-l-3 border-soft-gold px-3 py-3 rounded-sm mb-4">
+          <p className="font-body text-xs font-semibold text-soft-gold uppercase tracking-wide mb-2">
+            🎯 Why this matches
           </p>
+          <ul className="space-y-2">
+            {whyMatches.map((fact, idx) => (
+              <li key={idx} className="flex gap-2 items-start">
+                <span className="font-body text-small text-deep-navy flex-1">{fact.text}</span>
+                <span className="inline-flex items-center gap-1 bg-soft-gold text-white px-2 py-1 rounded-sm font-body text-xs font-medium flex-shrink-0 whitespace-nowrap">
+                  {fact.source}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
+      )}
 
-        {/* Mission snippet */}
-        {org.mission && (
-          <p className="font-body text-small text-cool-grey leading-relaxed mb-4">
-            {org.mission.length > 140 ? org.mission.substring(0, 140) + '…' : org.mission}
-          </p>
-        )}
-
-        {/* Why This Matches Section */}
-        {whyMatches.length > 0 && (
-          <div className="bg-gradient-to-r from-soft-gold/8 to-transparent border-l-3 border-soft-gold px-3 py-3 rounded-sm mb-4">
-            <p className="font-body text-xs font-semibold text-soft-gold uppercase tracking-wide mb-2">
-              🎯 Why this matches
-            </p>
-            <ul className="space-y-2">
-              {whyMatches.map((fact, idx) => (
-                <li key={idx} className="flex gap-2 items-start">
-                  <span className="font-body text-small text-deep-navy flex-1">{fact.text}</span>
-                  <span className="inline-flex items-center gap-1 bg-soft-gold text-white px-2 py-1 rounded-sm font-body text-xs font-medium flex-shrink-0 whitespace-nowrap">
-                    {fact.source}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* CTA Buttons */}
-        <div className="flex gap-3 items-center">
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              // Navigation handled by Link
-            }}
-            className="flex-1 bg-soft-gold text-white px-4 py-2 rounded-md font-body text-small font-medium hover:bg-bright-gold transition-colors"
-          >
-            Learn more
-          </button>
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              // TODO: Wire to Wallet context
-            }}
-            className="px-4 py-2 border border-soft-gold text-soft-gold rounded-md font-body text-small font-medium hover:bg-soft-gold/5 transition-colors"
-          >
-            Save
-          </button>
-        </div>
-      </article>
-    </Link>
+      {/* CTA Buttons (outside Link to prevent navigation conflicts) */}
+      <div className="flex gap-3 items-center">
+        <Link
+          to={orgLink}
+          className="flex-1 bg-soft-gold text-white px-4 py-2 rounded-md font-body text-small font-medium hover:bg-bright-gold transition-colors text-center"
+        >
+          Learn more
+        </Link>
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            // TODO: Wire to Wallet context
+          }}
+          className="px-4 py-2 border border-soft-gold text-soft-gold rounded-md font-body text-small font-medium hover:bg-soft-gold/5 transition-colors"
+        >
+          Save
+        </button>
+      </div>
+    </article>
   )
 }

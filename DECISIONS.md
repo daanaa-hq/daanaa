@@ -6,6 +6,31 @@
 
 ---
 
+## 2026-08-19: Small Org Clarity Phase 3C — Visible "Why This Matches" Over Collapsible Disclosure
+
+**Issue:** Phase 3 checkpoint (2026-08-09) proposed an `AdditionalOrgContext` collapsible card at end of Deep Dive section. Board simulation (4 expert perspectives) rejected it as solving the wrong problem: misdiagnosed visibility as a detail-layout issue when the real problem is discovery-stage salience.
+
+**Chose:** Visible, prominent "Why this organization may match your giving" section on profile pages (between mission and trust sections) + stubs for search-result cards and filters. Shows 3 curated donor-relevant facts (Mission & Impact, Geographic Reach, Financial Health) without collapsing.
+
+**Research backing:**
+- Perroni et al.: search salience predicts donations (not post-click detail layout)
+- Nielsen Norman Group: visible patterns > collapsed/accordion patterns (less interaction cost)
+- Fairness literature (Singh & Joachims): exposure itself is an allocable outcome requiring measurement
+- Candid transparency research: small orgs benefit from visible, source-labeled evidence (not from policy checklists that show as "missing")
+
+**Why not collapsible:** Buried content on deep-dive page (end-of-scroll) doesn't solve the upstream discovery problem. Even if expanded, doesn't affect search-result salience or consideration-set formation. Visible placement + filters on search/directory is the architecture that addresses the real constraint.
+
+**Execution:**
+- 3 new components: `WhyThisMatches.tsx` (profile), `SearchResultCard.tsx` (search), `OrgContextFilters.tsx` (stub for Phase 3B)
+- Wired into `OrganizationDetail.tsx` between narrative sections
+- Board-approved design with research citations; locally tested; deployed 2026-08-19 with all smoke tests passing
+- Unused prop removed during code review (`highlight` in SearchResultCard)
+- Redeployed after fix; verified live on daanaa.org
+
+**Metrics to watch:** Small org CTR vs. large org CTR (primary signal of fairness); org-page load time (should be flat); Week 1 engagement baseline for Phase 4 measurement.
+
+---
+
 ## 2026-08-15: Precompute Patched for the 1,458 Website Status Promotion (Scoped, Not a Full Rebuild)
 
 **Issue:** Org detail pages read `registry_enriched` live, so the earlier `beta`→`ok` promotion showed correctly there immediately. Directory/search-browse pages read static precompute files, which still carried the stale `beta` status until patched.

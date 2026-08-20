@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 import { ApiOrganization } from '../data/api'
-import { formatCurrency } from '../data/organizations'
 
 /**
  * WhyThisMatches — Small Org Clarity Phase 3C
@@ -49,7 +48,7 @@ function extractGeographicFact(org: ApiOrganization): FactCard | null {
 
   // Always show primary state if available
   if (primaryState) {
-    const content = serviceStates && serviceStates.length > 0
+    const content = serviceStates.length > 0
       ? `Operates in ${primaryState} and also serves ${serviceStates.join(', ')}`
       : `Based in ${primaryState}`
 
