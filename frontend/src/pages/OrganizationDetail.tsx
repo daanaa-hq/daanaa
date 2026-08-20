@@ -45,6 +45,7 @@ import PeerMethodologyExplainer from '../components/PeerMethodologyExplainer'
 import WhatTheyDo from '../components/WhatTheyDo'
 import WhyTrustThem from '../components/WhyTrustThem'
 import HowToHelp from '../components/HowToHelp'
+import WhyThisMatches from '../components/WhyThisMatches'
 import { nonprofitSizeLabel } from '../utils/orgSize'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
@@ -973,6 +974,9 @@ export default function OrganizationDetail() {
 
           {/* SECTION 1: What do they do? Mission + programs in donor-friendly language */}
           {apiOrg && <WhatTheyDo org={apiOrg} />}
+
+          {/* SECTION 1.5: Why this matches — Three curated donor-relevant facts (Phase 3C: Small Org Clarity) */}
+          {apiOrg && <WhyThisMatches org={apiOrg} />}
 
           {/* SECTION 2: Why trust them? Unified narrative: financial + governance + verification */}
           {apiOrg && <WhyTrustThem org={apiOrg} />}
