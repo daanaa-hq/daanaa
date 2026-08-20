@@ -4,6 +4,22 @@
 
 ---
 
+## 2026-08-19: Code Review Must Happen Before Production Deploy
+
+**Symptom:** Phase 3C small-org-clarity components deployed to daanaa.org (2026-08-19 19:08 UTC), then code review executed (triggered at 19:30). Review found 5 real defects: button-in-Link navigation bug, mission-text duplication, dead imports, redundant null checks. All required fixes + redeployment.
+
+**Root cause:** Skipped code review step in deployment checklist. CLAUDE.md bar specifies "Definition of done: tests pass, types clean, docs reflect change, diff is small and explained" — code review is part of "types clean" and "diff reviewed." Treated deployment as the final step (it's the verification step) and code review as optional polish (it's a gate).
+
+**Preventing rule:** Code review BEFORE deployment, every time. Smoke tests verify the app runs; code review verifies it runs *correctly*. Use `/code-review <commit-hash> --level medium` (or --level high for user-facing changes) before pushing to production. Dead imports, unused props, semantic bugs (button navigation, duplication) only surface in deliberate review — they don't fail smoke tests. The cost of fixing during review (commit + redeploy) is far cheaper than fixing after production (incident response + hotfix + second deploy).
+
+**Specific checks for next time:**
+- Unused imports/props → code review catches these reliably
+- Button/interaction logic in component trees → review catches event handler conflicts
+- Content duplication → easy to miss in complex components; review flags it
+- Type redundancy (null checks guaranteed-false by earlier assigns) → review catches these too
+
+---
+
 ## 2026-08-18: `git stash pop` used exploratorily popped an unrelated pre-existing stash entry
 
 **Symptom:** Ran `git stash` to test whether the working tree was clean (expecting "No local changes to save," which it correctly reported), then ran `git stash pop` as what was meant to be a no-op cleanup. It wasn't a no-op — the repo already had two old, unrelated stash entries sitting in the stack from much earlier sessions (`stash@{0}`: a WIP geolocation feature, `stash@{1}`: an .env-exclusion fix). `pop` always acts on the top of the stack regardless of who put it there or why, so it merged in `stash@{0}`'s changes on top of the current HEAD — a completely different feature branch's in-progress edits — producing merge conflicts across ~15 files, including one I'd genuinely edited that session (`FinancialContext.tsx`) and several I'd never touched (`V6FinancialContext.tsx`, assorted nonprofit-dashboard pages).
