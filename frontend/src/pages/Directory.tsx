@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useSearchParams, Link } from 'react-router-dom'
 import OrgCard, { OrgCardRow } from '../components/OrgCard'
+import SearchResultCard from '../components/SearchResultCard'
 import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
 import Breadcrumb from '../components/Breadcrumb'
@@ -1192,15 +1193,15 @@ export default function Directory() {
               ) : organizations.length > 0 ? (
                 <>
                   {viewMode === 'list' ? (
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
                       {organizations.map((org) => (
-                        <OrgCardApi key={org.EIN} org={org} listView />
+                        <SearchResultCard key={org.EIN} org={org} />
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {organizations.map((org) => (
-                        <OrgCardApi key={org.EIN} org={org} />
+                        <SearchResultCard key={org.EIN} org={org} />
                       ))}
                     </div>
                   )}
