@@ -3,6 +3,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useSearchParams, Link } from 'react-router-dom'
 import OrgCard, { OrgCardRow } from '../components/OrgCard'
 import SearchResultCard from '../components/SearchResultCard'
+import OrgContextFilters from '../components/OrgContextFilters'
 import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
 import Breadcrumb from '../components/Breadcrumb'
@@ -879,6 +880,9 @@ export default function Directory() {
               </button>
             </div>
           )}
+
+          {/* OrgContextFilters — Phase 3B stub (returns null, prep for Phase 3B.4) */}
+          <OrgContextFilters />
 
           {/* FilterSheet — mobile only */}
           <FilterSheet
