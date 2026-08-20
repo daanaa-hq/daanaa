@@ -1,5 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { ApiOrganization } from '../data/api'
+import { trackWhyMatchesVisible } from '../utils/analytics'
+import { nonprofitSizeLabel } from '../utils/orgSize'
 
 /**
  * WhyThisMatches — Small Org Clarity Phase 3C
@@ -8,6 +10,9 @@ import { ApiOrganization } from '../data/api'
  * 1. Mission & Impact (from mission + IRS program narrative)
  * 2. Geographic Reach (from service_scope + extracted states)
  * 3. Financial Health (reserves, program efficiency, trend)
+ *
+ * Measurement (Phase 3B.3):
+ * - Tracks visibility: whyMatches:visible (location=org_detail, org_size_bucket)
  *
  * Stewardship alignment:
  * - P3 (evidence-based): every fact is sourced + verified
@@ -94,6 +99,14 @@ function extractFinancialFact(org: ApiOrganization): FactCard | null {
 }
 
 export default function WhyThisMatches({ org, prominent = false }: { org: ApiOrganization; prominent?: boolean }) {
+  // Use revenue_band if available, else derive from total_revenue, else 'unknown'
+  const orgSizeBucket = org.revenue_band || nonprofitSizeLabel(org.total_revenue) || 'unknown'
+
+  // Track visibility when component renders (Phase 3B.3)
+  useEffect(() => {
+    trackWhyMatchesVisible('org_detail', orgSizeBucket)
+  }, [org.EIN, orgSizeBucket])
+
   const facts = useMemo(() => {
     const collected: FactCard[] = []
 

@@ -1,11 +1,18 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiOrganization } from '../data/api'
+import { trackWhyMatchesVisible, trackWhyMatchesClicked } from '../utils/analytics'
+import { nonprofitSizeLabel } from '../utils/orgSize'
 
 /**
  * SearchResultCard — "Why this matches" inline on search results
  *
  * Displays org name, location, mission, then visible summary of 2–3 key facts
  * (no collapse/expand) with source badges.
+ *
+ * Measurement (Phase 3B.3):
+ * - Tracks visibility: whyMatches:visible (location=search, org_size_bucket)
+ * - Tracks CTAs: whyMatches:clicked (action=learn_more|save_to_wallet, org_size_bucket)
  *
  * Research: Perroni et al. (salience in search results drives donations);
  * Nielsen Norman (visible > collapsed patterns).
@@ -58,6 +65,21 @@ export default function SearchResultCard({
 }) {
   const whyMatches = extractWhyMatches(org)
   const orgLink = `/org/${org.EIN}`
+  // Use revenue_band if available, else derive from total_revenue, else 'unknown'
+  const orgSizeBucket = org.revenue_band || nonprofitSizeLabel(org.total_revenue) || 'unknown'
+
+  // Track visibility when component renders (Phase 3B.3)
+  useEffect(() => {
+    trackWhyMatchesVisible('search', orgSizeBucket)
+  }, [org.EIN, orgSizeBucket])
+
+  const handleLearnMore = () => {
+    trackWhyMatchesClicked('search', 'learn_more', orgSizeBucket)
+  }
+
+  const handleSaveToWallet = () => {
+    trackWhyMatchesClicked('search', 'save_to_wallet', orgSizeBucket)
+  }
 
   return (
     <article className="border border-light-grey rounded-lg p-5 bg-white hover:shadow-md transition-shadow duration-200">
@@ -101,6 +123,7 @@ export default function SearchResultCard({
       <div className="flex gap-3 items-center">
         <Link
           to={orgLink}
+          onClick={handleLearnMore}
           className="flex-1 bg-soft-gold text-white px-4 py-2 rounded-md font-body text-small font-medium hover:bg-bright-gold transition-colors text-center"
         >
           Learn more
@@ -108,6 +131,7 @@ export default function SearchResultCard({
         <button
           onClick={(e) => {
             e.preventDefault()
+            handleSaveToWallet()
             // TODO: Wire to Wallet context
           }}
           className="px-4 py-2 border border-soft-gold text-soft-gold rounded-md font-body text-small font-medium hover:bg-soft-gold/5 transition-colors"

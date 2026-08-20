@@ -70,3 +70,35 @@ export function trackSearchFilter(filterType: string): void {
     })
   }
 }
+
+/**
+ * Track "Why this matches" visibility on search results or org detail.
+ * Fires when SearchResultCard or WhyThisMatches component renders.
+ * Segmented by org_size_bucket to measure if salience improves discovery
+ * for small orgs (Phase 3B.3 measurement gate).
+ * Stewardship P4 (small org fairness).
+ */
+export function trackWhyMatchesVisible(location: 'search' | 'org_detail', orgSize?: string | null): void {
+  trackEvent('whyMatches:visible', {
+    props: {
+      location,
+      org_size: orgSize || 'unknown',
+    }
+  })
+}
+
+/**
+ * Track when user clicks CTA (Learn More, Save) from Why This Matches context.
+ * Metadata: location (search vs. org detail), action (learn_more, save_to_wallet).
+ * Used to measure if visible context drives CTR and wallet additions.
+ * Stewardship P2 (privacy — no user or org identifier, aggregate only).
+ */
+export function trackWhyMatchesClicked(location: 'search' | 'org_detail', action: 'learn_more' | 'save_to_wallet', orgSize?: string | null): void {
+  trackEvent('whyMatches:clicked', {
+    props: {
+      location,
+      action,
+      org_size: orgSize || 'unknown',
+    }
+  })
+}
