@@ -2314,7 +2314,11 @@ def list_organizations():
     where_clauses = [_DEDUCTIBILITY_FILTER]
     params = []
 
-    fts_join_sql = ""
+    # fts_cte: WITH-clause prefix (empty unless FTS is used).
+    # fts_from: FROM-clause fragment — "registry_enriched r" by default, or the
+    # CTE-driven CROSS JOIN below when FTS is used.
+    fts_cte = ""
+    fts_from = "registry_enriched r"
     fts_used = False
     if search:
         search_normalized = search.replace('-', '').strip()
@@ -2333,12 +2337,25 @@ def list_organizations():
             # BM25-only optimization (2026-08-09): removed UNION that was scanning
             # index twice. Exact-name pinning handled separately in fused_search.
             # This reduces p95 latency by ~53% (896ms → 419ms) on 1.75M org index.
+            #
+            # MATERIALIZED CTE + CROSS JOIN (2026-08-21): a plain JOIN here let
+            # SQLite's planner pick idx_deductible_active as the outer loop —
+            # scanning the ~1.7M-row eligible-org index and bloom-filtering
+            # against the 2,000 FTS candidates, instead of the reverse. Same
+            # bug class as the 2026-07-18 join-order incident (LESSONS.md).
+            # MATERIALIZED forces the 2,000-row candidate set to compute first;
+            # CROSS JOIN (with fts_candidates on the left) stops the planner
+            # from re-flipping the order. Verified via EXPLAIN QUERY PLAN:
+            # MATERIALIZE fts_candidates → SCAN fts → SEARCH r USING INDEX
+            # sqlite_autoindex_registry_enriched_1 (EIN=?). Confirmed 0.7s →
+            # 0.08-0.2s locally on health/food/children (~4-9x).
             fts_q = _sanitize_fts_query(search)
-            fts_join_sql = (
-                "JOIN (SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel "
+            fts_cte = (
+                "WITH fts_candidates AS MATERIALIZED (SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel "
                 "FROM org_fts WHERE org_fts MATCH ? "
-                "ORDER BY rel LIMIT 2000) fts ON r.EIN = fts.ein "
+                "ORDER BY rel LIMIT 2000) "
             )
+            fts_from = "fts_candidates fts CROSS JOIN registry_enriched r ON r.EIN = fts.ein"
             params.append(fts_q)
             fts_used = True
         else:
@@ -2444,7 +2461,7 @@ def list_organizations():
     # f-string is safe here: where_sql contains only parameterized WHERE structure
     # (built from safe clauses), while actual user values live in `params` tuple
     total = db.execute(
-        f"SELECT COUNT(*) FROM registry_enriched r {fts_join_sql}WHERE {where_sql}",
+        f"{fts_cte}SELECT COUNT(*) FROM {fts_from} WHERE {where_sql}",
         params).fetchone()[0]
 
     corrected_query = None
@@ -2476,13 +2493,14 @@ def list_organizations():
             _phrase2 = f'org_name : "{" ".join(_toks2)}"' if _toks2 else '""'
             _params2 = [_phrase2, _fts_q2] + params[2:]
             _total2 = db.execute(
-                f"SELECT COUNT(*) FROM registry_enriched r {fts_join_sql}WHERE {where_sql}",
+                f"{fts_cte}SELECT COUNT(*) FROM {fts_from} WHERE {where_sql}",
                 _params2).fetchone()[0]
             if _total2 > 0:
                 total, params, corrected_query = _total2, _params2, _cq
     if fts_used and total == 0:
         # Stage 2: plain name-word LIKE so donors aren't dead-ended.
-        fts_join_sql = ""
+        fts_cte = ""
+        fts_from = "registry_enriched r"
         fts_used = False
         params = params[2:]   # drop the two MATCH params (bound ahead of WHERE)
         for word in re.findall(r'\w{2,}', search)[:6]:
@@ -2521,7 +2539,14 @@ def list_organizations():
         offset = random_offset
         order_sql = ""  # No ORDER BY needed for random sampling
     elif fts_used and 'sort' not in request.args:
-        order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel"
+        # r.EIN as a final tiebreak (2026-08-21, found while fixing the join-order
+        # perf bug above): fts.rel ties were previously broken by whatever order
+        # SQLite's physical scan happened to visit rows in — stable within one
+        # query plan, but silently different across plans (and thus, unstably,
+        # across pages/requests once the plan changes). EIN is unique and always
+        # present, so this makes pagination deterministic without affecting
+        # relevance ranking.
+        order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel, r.EIN"
         order_params.append((corrected_query or search).upper())
     elif sort_col:  # Prevent "ORDER BY  " when sort_col is empty
         order_sql = f"ORDER BY {sort_col} {_sort_dir_suffix}"
@@ -2533,7 +2558,7 @@ def list_organizations():
     limit_clause = "LIMIT ? OFFSET ?"
 
     sql = f"""
-        SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
+        {fts_cte}SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
                r.total_revenue, r.ntee1_percentile, r.ntee1_total_orgs, r.source,
                r.latest_tax_year, r.data_source, r.updated_at,
                r.revenue_band, r.peer_percentile, r.peer_rank, r.peer_total, r.peer_group,
@@ -2548,8 +2573,8 @@ def list_organizations():
                r.peer_group_size, r.is_inferred_v6, r.confidence_margin_v6,
                r.merit_percentile_v6, r.merit_percentile_confidence_v6,
                r.irs_eligibility_status, r.irs_eligibility_checked_at, r.irs_eligibility_sources
-        FROM registry_enriched r
-        {fts_join_sql}WHERE {where_sql}
+        FROM {fts_from}
+        WHERE {where_sql}
         {order_sql}
         {limit_clause}
     """
