@@ -1,8 +1,9 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiOrganization } from '../data/api'
-import { trackWhyMatchesVisible, trackWhyMatchesClicked } from '../utils/analytics'
+import { trackWhyMatchesVisible, trackWhyMatchesClicked, trackOrgBookmark } from '../utils/analytics'
 import { nonprofitSizeLabel } from '../utils/orgSize'
+import { useWallet } from '../contexts/WalletContext'
 
 /**
  * SearchResultCard — "Why this matches" inline on search results
@@ -67,6 +68,8 @@ export default function SearchResultCard({
   const orgLink = `/org/${org.EIN}`
   // Use revenue_band if available, else derive from total_revenue, else 'unknown'
   const orgSizeBucket = org.revenue_band || nonprofitSizeLabel(org.total_revenue) || 'unknown'
+  const { isInFunding, addToFunding, removeFromFunding } = useWallet()
+  const saved = isInFunding(org.EIN)
 
   // Track visibility when component renders (Phase 3B.3)
   useEffect(() => {
@@ -77,7 +80,19 @@ export default function SearchResultCard({
     trackWhyMatchesClicked('search', 'learn_more', orgSizeBucket)
   }
 
+  // Fixed 2026-08-21 (LESSONS.md same date): this handler only logged
+  // analytics and had a `TODO: Wire to Wallet context` -- the Save button
+  // looked live but never actually saved anything. Matches
+  // OrganizationDetail.tsx's proven WalletHeartButton pattern (useWallet's
+  // isInFunding/addToFunding/removeFromFunding), found via a Codex-assisted
+  // offerings-alignment audit.
   const handleSaveToWallet = () => {
+    if (saved) {
+      removeFromFunding(org.EIN)
+    } else {
+      addToFunding(org.EIN)
+      trackOrgBookmark(orgSizeBucket)
+    }
     trackWhyMatchesClicked('search', 'save_to_wallet', orgSizeBucket)
   }
 
@@ -132,11 +147,15 @@ export default function SearchResultCard({
           onClick={(e) => {
             e.preventDefault()
             handleSaveToWallet()
-            // TODO: Wire to Wallet context
           }}
-          className="px-4 py-2 border border-soft-gold text-soft-gold rounded-md font-body text-small font-medium hover:bg-soft-gold/5 transition-colors"
+          aria-pressed={saved}
+          className={`px-4 py-2 border rounded-md font-body text-small font-medium transition-colors ${
+            saved
+              ? 'border-soft-gold bg-soft-gold text-white hover:bg-bright-gold'
+              : 'border-soft-gold text-soft-gold hover:bg-soft-gold/5'
+          }`}
         >
-          Save
+          {saved ? 'Saved' : 'Save'}
         </button>
       </div>
     </article>
