@@ -148,7 +148,18 @@ fi
 # ── Step 5: Patch changed org precompute files ──────────────────────────────
 log "Step 5/6: Patching changed org precompute files..."
 PATCH_LOG="/tmp/precompute_patch_$(date +%Y%m%d).log"
-python3 scripts/patch_precompute_v5_context.py >> "$PATCH_LOG" 2>&1
+# Fixed 2026-08-21: this call has referenced a stale pre-migration path
+# (scripts/patch_precompute_v5_context.py; the file now lives under
+# scripts/archive/, likely obsolete now that v6 scoring superseded v5 --
+# a founder call, not fixed here) since at least 2026-08-14. Under `set -e`
+# with no guard on this line, that failure was silently killing the whole
+# script right after Step 4.5 every night -- Steps 5-6 (org-file precompute
+# refresh + API cache-clearing restart) never ran. The surrounding code
+# (UPDATED defaulting to 0, "no org file changes, skipping" messaging) makes
+# clear this step was always meant to degrade gracefully, not take the
+# pipeline down with it -- `|| true` restores that original intent without
+# reviving the archived v5-context patcher itself. See LESSONS.md 2026-08-21.
+python3 scripts/patch_precompute_v5_context.py >> "$PATCH_LOG" 2>&1 || true
 UPDATED=$(grep -oP '(?<=updated=)\d+' "$PATCH_LOG" | tail -1 || echo 0)
 log "Precompute patch: $UPDATED files updated."
 
