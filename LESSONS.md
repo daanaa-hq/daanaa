@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-08-21: Weekly IRS data sync silently broken for 4 days — same folder-migration path drift, fourth occurrence today
+
+**Symptom:** Asked "any new data since we last checked" — checked `logs/cron.log` and found the weekly IRS refresh (Mondays 2am, new org registrations + revocation-guard + FTS delta) had failed every run since 2026-08-17: `python3: can't open file '/home/akbar/meritgiving/scripts/sync_irs_data.py': [Errno 2] No such file or directory`.
+
+**Root cause:** `scripts/migrations/refresh_irs_data.sh` called two subprocesses by their pre-2026-08-12-folder-migration paths (`scripts/sync_irs_data.py`, `scripts/search_index_delta.py`) instead of their real locations (`scripts/migrations/sync_irs_data.py`, `scripts/search/search_index_delta.py`). `set -e` meant the first broken path killed the whole job before the second broken path was ever exercised — a compound bug hiding behind another compound bug. Fourth distinct instance of this exact failure mode found in this session alone (also hit `search_typo.py` and `search_index_delta.py` import paths in test fixtures, and `scripts/build_fts_index.py` vs `scripts/search/build_fts_index.py` during Codex's task-1 investigation, which dead-ended on it).
+
+**Cost:** Real, not just a broken script — 12,113 new organizations sat un-synced for ~11 days until this was found and fixed manually (registry: 2,056,834 → 2,068,947 after re-running by hand).
+
+**Preventing rule:** The 2026-08-12 "folder migration batch 4 — 203 files to domain folders" commit moved a lot of files at once; every subprocess call (`python3 scripts/X.py`) anywhere in the repo that referenced one of those 203 old paths is a latent landmine, and this session found four of them by accident, not by a systematic sweep. A repo-wide grep for `python3 scripts/[a-z_]+\.py` cross-checked against actual file locations (not just the ones a given task happens to touch) would find the rest before the next silent multi-day gap. Worth doing once, deliberately, rather than continuing to discover these one incident at a time.
+
+---
+
 ## 2026-08-21: Search join-order regressed again + smoke-tested my own fix 8 seconds too early
 
 **Symptom:** Production search latency was 5-7.7s for common single words (health, food, children, cancer, education, animal) and trending *worse* across repeated tests, well above the 3s threshold. `daanaa-health` skill checklist §2 caught it immediately.
