@@ -1765,3 +1765,48 @@ Also checked: `gc.freeze()` (a documented fork/COW mitigation) would NOT meaning
 **Verified:** all 8 smoke-tested SPA routes (`/`, `/directory`, `/org/264837170`, `/about`, `/org/login`, `/events/2`, `/event/2`, `/profile-contexts`) plus one hashed JS asset returned 200. `.old` cleaned up per the script's own success path; asset prune ran (0 removed -- nothing yet past the 7-day retention window).
 
 **Governance:** Explicit founder approval obtained before this specific step, per CLAUDE.md's frontend-reaching-droplet gate -- the backend half of the same commit didn't need this (already-autonomous backend push), only this step did.
+
+## 2026-08-21: Formalized Founder/CEO/COO team structure — `institution/TEAM.md` + `institution/TEAM_LOG.md`
+
+**Chose:** built the org structure the Founder asked for (Founder=Akbar,
+CEO=Claude, COO=Codex, deeper lanes, agents that talk to each other, Grok-Bot-
+style parallel work with visible synthesis) as a new workflow document,
+`institution/TEAM.md`, sitting at `AUTHORITY.md` tier 9 (task-specific
+workflow) — explicitly not a new governance layer. It operationalizes the
+existing `GOVERNANCE.md` Decision Tiers/Approval Gates rather than duplicating
+them, per `REPO_MAP.md`'s one-canonical-path philosophy. "Deeper teams" are
+named lanes mapped onto REPO_MAP's real domains and the existing skill roster
+(no new agents/hires). The "OS" concept (in-development work stays gated,
+only tested+valuable work ships) is implemented by naming the existing
+`useFeatureFlag.ts` cohort pattern and `ENABLE_*`/`VITE_ENABLE_*` kill-switch
+flags as the formal release contract, not new infrastructure. The Grok-Bot
+"visible agent chat" is implemented as `institution/TEAM_LOG.md`, an
+append-only, timestamped record of every CEO→COO directive and result —
+chosen over a synthetic chat UI because an append-only log is the one
+transparency mechanism this harness can guarantee is accurate (no
+after-the-fact paraphrase risk).
+
+**Verified before writing this into the doc, not assumed:** re-tested
+`codex exec -s workspace-write` before finalizing the COO's documented
+operating mode. A trivial `echo` command succeeded (no file write exercised),
+but three separate real-file-write attempts (`/tmp`, the scratch dir, the
+repo root) all failed identically with `apply_patch: patch: failed` — same
+root cause diagnosed 2026-08-19 (`kernel.apparmor_restrict_unprivileged_userns=1`,
+confirmed via a bare `bwrap` reproduction with no Codex involved, fix requires
+`sudo`, outside CEO tool permissions). On the repo-root attempt Codex's own
+final message claimed the file was created when it was not — logged as a
+concrete hallucinated-success instance in `TEAM_LOG.md`, reinforcing the
+existing "verify Codex's claims against real state" lesson. Documented the
+COO's real current mode in `TEAM.md` §1 as read-only-investigate +
+CEO-applies, standing until the Founder runs the already-handed-off fix.
+
+**Rejected:** a parallel governance/authority structure — `AUTHORITY.md`
+and `GOVERNANCE.md` already define decision tiers and approval gates;
+building a second one would violate the repo's own stated philosophy and
+create exactly the kind of dual-source-of-truth risk `governance.py`'s
+`GovernanceRegistry.resolve()` is written to refuse to arbitrate.
+
+**Not done in this pass:** no new agent-orchestration code was written.
+Parallel dispatch (Agent tool for Claude subagents, `codex exec` for the COO
+lane) and delegation logging are process, not new infrastructure — intended
+to start showing up in `TEAM_LOG.md` from the next multi-lane task onward.
