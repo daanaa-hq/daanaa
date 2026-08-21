@@ -2422,6 +2422,31 @@ def list_organizations():
             "EXISTS (SELECT 1 FROM json_each(cause_tags) WHERE value LIKE ?)"
         )
         params.append(f'%{cause}%')
+    # Mission facet (Phase 3B.4, 2026-08-21): OR within the facet -- match ANY
+    # selected tag. cause_tags is free-text, not an enum (e.g. "food bank",
+    # "food access", "food assistance" are all distinct values -- confirmed by
+    # querying the real data before writing this), so this uses the same
+    # case-insensitive LIKE pattern as the existing single `cause` filter
+    # above, just OR'd across up to 12 selected tags instead of one.
+    mission_raw = request.args.get('mission', '').strip()
+    mission_tags = [t.strip()[:60] for t in mission_raw.split(',') if t.strip()][:12]
+    if mission_tags:
+        mission_parts = ' OR '.join(['LOWER(value) LIKE LOWER(?)'] * len(mission_tags))
+        where_clauses.append(
+            f"EXISTS (SELECT 1 FROM json_each(cause_tags) WHERE {mission_parts})"
+        )
+        params.extend(f'%{t}%' for t in mission_tags)
+    # Geography facet (service-area filtering) intentionally NOT implemented:
+    # checked 2026-08-21, there is no real per-org service-area data to filter
+    # on. `org.get('extracted_metadata')` (read at line ~2978, service_scope
+    # building) is never actually populated anywhere in this file -- always
+    # None in practice. The only other candidate, `org_service_areas` table,
+    # has exactly 1 row across 1.7M+ orgs. Wiring a filter to either would
+    # silently no-op (donor picks a state, results don't narrow, looks
+    # broken) -- worse than not having the control. OrgContextFilters.tsx's
+    # geography dropdown stays in the UI (state is tracked, URL syncs) but
+    # does not currently affect results; revisit if/when service-area data
+    # actually gets populated at scale.
 
     # Exact visibility (lamp) tier filter retired 2026-08-08 (founder decision).
     # _TIER_HIERARCHY was dead code even before this -- defined, never read

@@ -36,6 +36,17 @@ const SORT_OPTIONS = [
   { id: 'total_revenue', label: 'By Total Revenue' },  // Data transparency, not ranking
 ]
 
+// Phase 3B.4 (2026-08-21): maps OrgContextFilters' revenue-band picks onto the
+// existing min_revenue/max_revenue API params — no new backend param needed.
+// Must match OrgContextFilters.tsx's REVENUE_BAND_OPTIONS labels.
+const REVENUE_BAND_BOUNDS: Record<string, { min?: number; max?: number }> = {
+  Micro:  { max: 249_999.99 },
+  Small:  { min: 250_000, max: 999_999.99 },
+  Medium: { min: 1_000_000, max: 9_999_999.99 },
+  Large:  { min: 10_000_000, max: 99_999_999.99 },
+  Major:  { min: 100_000_000.01 },
+}
+
 function hasKnownDataSource(src: string | null) {
   return src === 'propublica' || src === 'irs_soi'
 }
@@ -238,7 +249,14 @@ export default function Directory() {
 
   // Fused search mode: any meaningful query with no active structured filters
   const hasRevenueFilter = minRevenue > 0 || maxRevenue < 500_000_000
-  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || hasRevenueFilter || hasWebsite || needsSupport || !!debouncedCause.trim()
+  // A selected revenue band narrows any manually-set revenue range (AND semantics,
+  // consistent with how facets combine elsewhere on this page).
+  const selectedBandBounds = revenueBand ? REVENUE_BAND_BOUNDS[revenueBand] : undefined
+  const effectiveMinRevenue = Math.max(minRevenue, selectedBandBounds?.min ?? 0)
+  const effectiveMaxRevenue = Math.min(maxRevenue, selectedBandBounds?.max ?? 500_000_000)
+  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter ||
+    hasRevenueFilter || missionTags.length > 0 || !!revenueBand ||
+    hasWebsite || needsSupport || !!debouncedCause.trim()
   const isFusedMode = !hasAnyFilter && debouncedQuery.trim().length >= 2
 
   // Categories the user drilled into (picked specific subcats) are represented by
@@ -260,18 +278,19 @@ export default function Directory() {
       order: sortOrder,
       page: currentPage,
       per_page: itemsPerPage,
-      min_revenue: minRevenue > 0 ? minRevenue : undefined,
-      max_revenue: maxRevenue < 500_000_000 ? maxRevenue : undefined,
+      min_revenue: effectiveMinRevenue > 0 ? effectiveMinRevenue : undefined,
+      max_revenue: effectiveMaxRevenue < 500_000_000 ? effectiveMaxRevenue : undefined,
       verified_revenue: verifiedRevenueOnly || undefined,
       has_revenue: showOnlyWithRevenue || undefined,  // Filter to orgs with revenue data
       has_website: hasWebsite || undefined,
       hidden_gem: effectiveHiddenGem || undefined,
       needs_funding: needsSupport || undefined,
       cause: debouncedCause.trim() || undefined,
+      mission: missionTags.length ? missionTags.join(',') : undefined,
       near: near || undefined,
       radius_mi: near ? radiusMi : undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, verifiedRevenueOnly, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi, randomizeCount, isFusedMode]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, effectiveMinRevenue, effectiveMaxRevenue, missionTags, revenueBand, verifiedRevenueOnly, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi, randomizeCount, isFusedMode]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
@@ -366,6 +385,9 @@ export default function Directory() {
     setHiddenGem(true)
     setCause('')
     setDebouncedCause('')
+    setMissionTags([])
+    setServiceStates([])
+    setRevenueBand(null)
     setCurrentPage(1)
     searchParams.delete('ntee')
     searchParams.delete('sub')
@@ -380,6 +402,9 @@ export default function Directory() {
     searchParams.delete('needs_funding')
     searchParams.delete('near')
     searchParams.delete('radius_mi')
+    searchParams.delete('mission')
+    searchParams.delete('service_state')
+    searchParams.delete('revenue_band')
     setSearchParams(searchParams)
   }
 
@@ -457,6 +482,8 @@ export default function Directory() {
     subFilters.length > 0,
     !!stateFilter,
     hasRevenueFilter,
+    missionTags.length > 0,
+    !!revenueBand,
     hasWebsite,
     needsSupport,
     sortBy !== 'organization_name',
@@ -893,7 +920,12 @@ export default function Directory() {
             </div>
           )}
 
-          {/* OrgContextFilters — Phase 3B.4: Discovery filters (mission, geography, financial) */}
+          {/* OrgContextFilters — Phase 3B.4: Discovery filters (mission, geography, financial).
+              Geography (serviceStates) is UI-only for now — checked 2026-08-21, there is no
+              real per-org service-area data to filter on (see daanaa_api.py comment at the
+              mission-facet WHERE clause for the full finding). State + URL still sync so the
+              control isn't broken-looking and this is a small diff to wire up once real data
+              exists; it just doesn't narrow results yet. */}
           <OrgContextFilters
             missionTags={missionTags}
             serviceStates={serviceStates}
@@ -901,17 +933,29 @@ export default function Directory() {
             onMissionChange={(tags) => {
               setMissionTags(tags)
               setCurrentPage(1)
-              // TODO: Update URL params and apply filter to getOrganizations()
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev)
+                if (tags.length) next.set('mission', tags.join(',')); else next.delete('mission')
+                return next
+              })
             }}
             onGeographyChange={(states) => {
               setServiceStates(states)
               setCurrentPage(1)
-              // TODO: Update URL params and apply filter to getOrganizations()
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev)
+                if (states.length) next.set('service_state', states.join(',')); else next.delete('service_state')
+                return next
+              })
             }}
             onFinancialChange={(band) => {
               setRevenueBand(band)
               setCurrentPage(1)
-              // TODO: Update URL params and apply filter to getOrganizations()
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev)
+                if (band) next.set('revenue_band', band); else next.delete('revenue_band')
+                return next
+              })
             }}
           />
 
