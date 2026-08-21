@@ -3453,7 +3453,7 @@ def get_financial_context_v6(ein):
         return jsonify({"error": "Invalid EIN format"}), 400
 
     try:
-        from scripts.v6_financial_context_api import get_v6_financial_context
+        from scripts.scoring.v6_financial_context_api import get_v6_financial_context
         db = get_db()
         context = get_v6_financial_context(db, ein_clean)
 

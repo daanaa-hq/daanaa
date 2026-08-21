@@ -100,3 +100,36 @@ tint while its 7 siblings did.
 call site; fixed the malformed class to `bg-amber-50/40` matching siblings.
 Typecheck + build verified. Committed (`31f6a35cc01`), not deployed. First
 slice of the deferred side-tab migration bucket — this file only.
+
+### 2026-08-21 — CEO → COO: critique the V6 reconciliation plan
+
+**Mode:** read-only
+**Directive:** drafted a 5-phase plan (guardrail → reconcile one canonical
+run → materialize safely → API/frontend behind a flag → retire old
+lineages → institutional lesson) after the founder said "let's think long
+term" and then "come up with a plan you both can agree upon and proceed."
+Asked Codex to critique it, not approve it.
+**Result:** four real refinements, not a rubber stamp: (1) Phase 0's SQL
+ordering was backwards — resolve conflicting active rows before adding the
+uniqueness constraint, or the constraint creation can itself fail; (2) don't
+presume the newest candidate run is canonical just because it's newest —
+validate its criteria against the founder's actual 2026-07-26 decisions and
+checksum the input data before trusting it as a baseline; (3) Phase 2's
+materialization needs row-level lineage and an atomic/idempotent snapshot-
+overwrite-validate-rollback sequence, not just aggregate-count matching,
+which can hide per-row corruption even when totals look right; (4) the
+qualitative-tier fallback UI must explicitly say why no percentile is shown
+("peer group insufficient"), not just omit the number silently, or it reads
+as an unranked/weaker organization by omission (Stewardship P4).
+**CEO action:** incorporated all four. Executed the corrected Phase 0
+immediately (small, safe, reversible): fixed daanaa_api.py's broken import
+path for the v6 financial-context endpoint (found while checking whether
+anything live reads v6_scoring_runs.status before touching it -- real bug,
+same path-drift class as everything else this session), reclassified the
+one self-contradictory ledger row from false 'active' to honest
+'candidate', and added a partial unique index so status='active' can only
+ever match one row -- tested by trying to create a second one; it failed as
+designed. Captured as migrations/028_v6_scoring_runs_single_active_guardrail.sql
+so it's reproducible for the droplet's DB later, not a one-off manual edit.
+Local DB only -- not deployed. Full plan (Phases 1-5) still needs founder
+review before continuing.

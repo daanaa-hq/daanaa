@@ -1828,3 +1828,64 @@ stewardship review before Letter Credits can be revisited — this decision
 doesn't pre-approve that future step, it just states the ordering.
 
 **Not done:** no code touched. This is a status update, not a fix.
+
+## 2026-08-21: V6 scoring reconciliation — long-term plan agreed, Phase 0 executed
+
+**Founder request:** "think long term" about the scoring-version fragmentation
+found while fixing badge copy (see the two entries immediately above this
+one), then "come up with a plan you both can agree upon and proceed, even if
+you have to change the database."
+
+**Diagnosis:** this isn't a "finish the v6 migration" problem, it's the same
+root-cause pattern already found twice this session (daemon health checks,
+cron path drift) — something gets designed with "should be automatically
+validated" as part of the plan, the validation never gets wired up, and
+drift accumulates silently. `v6_scoring_runs` had a row with `status='active'`
+whose own `notes` field said "Candidate only; not active API/frontend
+output" — nothing in the schema prevented that contradiction from existing.
+
+**Plan (CEO drafted, COO critiqued — 4 real refinements, not approval —
+see `institution/TEAM_LOG.md` for the full exchange):** Phase 0 (structural
+guardrail: one row can ever be `status='active'`, enforced by a DB
+constraint, not a script someone has to remember to run) → Phase 1
+(reconcile to one validated canonical run, checksummed against source data,
+not just "pick the newest") → Phase 2 (materialize to `registry_enriched`
+atomically with row-level lineage, plus a nightly reconciliation check) →
+Phase 3 (API/frontend migration off the legacy `peer_percentile` column,
+built behind a flag, qualitative-tier fallback UI for the ~73% of orgs with
+a tier but no numeric percentile, methodology.md rewritten to match reality)
+→ Phase 4 (retire v4/legacy/v5 for real, not another "archived" label that
+still gets queried) → Phase 5 (one `LESSONS.md` entry generalizing the
+"validation designed, never wired up" pattern — third instance this session).
+
+**Executed today, Phase 0 only:**
+1. Fixed `daanaa_api.py`'s `/api/organizations/<ein>/financial-context`
+   endpoint — its import (`from scripts.v6_financial_context_api import ...`)
+   pointed at a path that doesn't exist; the real file is
+   `scripts/scoring/v6_financial_context_api.py`. Found while checking
+   whether any live code reads `v6_scoring_runs.status` before touching it —
+   real, same path-drift bug class as everything else this session. This
+   endpoint isn't currently called by the frontend (grep-confirmed), so this
+   wasn't actively breaking a visible page, but every direct call to it was
+   silently 500ing. Verified the fix resolves via direct Python import, not
+   just reading the diff.
+2. Reclassified `v6_foundation_candidate_20260728_revised` from `active` to
+   `candidate` — matches the value `scripts/scoring/v6_financial_context_api.py`
+   already queries for (`status IN ('candidate','active')`), so this doesn't
+   break that read path, it stops the row from falsely claiming promotion.
+3. Added a partial unique index (`idx_v6_scoring_runs_single_active`) so
+   `status='active'` can only ever match one row. **Tested, not just
+   declared**: inserted a probe row with `status='active'`, then tried to
+   set a second row to `active` — failed with `UNIQUE constraint failed`,
+   confirmed the guardrail actually blocks the exact failure mode found
+   today. Probe row removed after the test.
+
+Captured as `migrations/028_v6_scoring_runs_single_active_guardrail.sql`
+(idempotent) so this is reproducible for the droplet's database later, not
+a one-off manual edit that only exists in one machine's local DB.
+
+**Not done:** Phases 1-5. `data/merit_registry.db` is gitignored (26.8GB —
+also flagged separately: the local disk is at 98% used, 24GB free, worth
+the founder's awareness independent of this work) so this change exists
+locally only; nothing shipped to the droplet. Phase 1 (choosing/validating
+one canonical run) is real, multi-step work and hasn't started.
