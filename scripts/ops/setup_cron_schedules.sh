@@ -40,13 +40,17 @@ cat > "$CRONTAB_TMP" << 'CRON'
 # ============================================================
 
 # ---------- Monitoring & watchdogs ----------
-* * * * * cd /home/akbar/meritgiving && source venv/bin/activate && python3 infrastructure/monitoring/metrics_collector.py >> /tmp/daanaa_metrics.log 2>&1
-* * * * * cd /home/akbar/meritgiving && source venv/bin/activate && python3 infrastructure/monitoring/alert_manager.py >> /tmp/daanaa_alerts.log 2>&1
+# infrastructure/monitoring/metrics_collector.py + alert_manager.py retired
+# 2026-08-21 (LESSONS.md same date): metrics_collector checked localhost:5000,
+# never production; alert_manager's send_alert_email() built a full email but
+# never called smtplib, just logged to /tmp. Both fully superseded by
+# daanaa_watchdog.py below, which actually alerts via mailer.py (real Gmail
+# send + ntfy push) and checks the real production endpoints. Confirmed via
+# Codex read-only investigation: no other file consumes their output.
 */5 * * * * cd ~/meritgiving && venv/bin/python3 scripts/ops/daanaa_watchdog.py >> logs/watchdog.log 2>&1
 */15 * * * * /home/akbar/meritgiving/scripts/ops/api_watchdog.sh
 */5 * * * * /home/akbar/meritgiving/scripts/ops/watchdog_discovery.sh
 0 * * * * python3 /home/akbar/meritgiving/scripts/ops/monitor_discovery_health.py >> /home/akbar/meritgiving/logs/health_monitor_cron.log 2>&1
-0 9 * * * cd /home/akbar/meritgiving && source venv/bin/activate && python3 infrastructure/monitoring/alert_manager.py digest >> /tmp/daanaa_alerts.log 2>&1
 */30 * * * * python3 scripts/ops/hardware_monitor.py >> logs/hardware_monitor.log 2>&1
 0 * * * * python3 scripts/ops/blitz_efficiency_tracker.py >> logs/blitz_efficiency.log 2>&1
 */15 * * * * python3 scripts/ops/monitor_phase1.py >> logs/phase1_monitor.log 2>&1
