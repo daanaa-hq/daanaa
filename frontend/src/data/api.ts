@@ -620,7 +620,7 @@ export interface ServiceArea {
 }
 
 export async function getServiceArea(ein: string): Promise<ServiceArea> {
-  return fetchJson(`${API_BASE}/api/org/${ein}/service-area`)
+  return fetchJson(`/api/org/${ein}/service-area`)
 }
 
 export async function putServiceArea(
@@ -629,7 +629,7 @@ export async function putServiceArea(
   area_type: ServiceAreaType,
   area_values: string[],
 ): Promise<{ ok: boolean }> {
-  return fetchJson(`${API_BASE}/api/org/${ein}/service-area`, {
+  return fetchJson(`/api/org/${ein}/service-area`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ verification_token: token, area_type, area_values }),
@@ -749,11 +749,11 @@ export async function searchVolunteerEvents(
   if (params.virtual)    q.set('virtual', '1')
   if (params.limit)      q.set('limit', String(params.limit))
   if (params.offset)     q.set('offset', String(params.offset))
-  return fetchJson(`${API_BASE}/api/volunteer-events?${q}`)
+  return fetchJson(`/api/volunteer-events?${q}`)
 }
 
 export async function getEventDetail(id: number): Promise<VolunteerEvent> {
-  return fetchJson(`${API_BASE}/api/events/${id}`)
+  return fetchJson(`/api/events/${id}`)
 }
 
 export async function signupForEvent(
@@ -765,7 +765,7 @@ export async function signupForEvent(
     idempotency_key?: string
   },
 ): Promise<EventSignupResult> {
-  return fetchJson(`${API_BASE}/api/events/${eventId}/signup`, {
+  return fetchJson(`/api/events/${eventId}/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
@@ -776,7 +776,7 @@ export async function cancelEventSignup(
   eventId: number,
   bookingToken: string,
 ): Promise<{ ok: boolean }> {
-  return fetchJson(`${API_BASE}/api/events/${eventId}/cancel-booking`, {
+  return fetchJson(`/api/events/${eventId}/cancel-booking`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ booking_token: bookingToken }),
@@ -784,14 +784,14 @@ export async function cancelEventSignup(
 }
 
 export async function getOrgContactsPublic(ein: string): Promise<{ contacts: OrgContacts }> {
-  return fetchJson(`${API_BASE}/api/org/${ein}/contacts`)
+  return fetchJson(`/api/org/${ein}/contacts`)
 }
 
 export async function getPortalContacts(
   ein: string,
   idToken: string,
 ): Promise<{ contacts: OrgContacts }> {
-  return fetchJson(`${API_BASE}/api/portal/contacts?ein=${ein}`, {
+  return fetchJson(`/api/portal/contacts?ein=${ein}`, {
     headers: { Authorization: `Bearer ${idToken}` },
   })
 }
@@ -801,7 +801,7 @@ export async function updatePortalContacts(
   contacts: Partial<OrgContacts>,
   idToken: string,
 ): Promise<{ contacts: OrgContacts }> {
-  return fetchJson(`${API_BASE}/api/portal/contacts`, {
+  return fetchJson(`/api/portal/contacts`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
     body: JSON.stringify({ ein, ...contacts }),
@@ -814,7 +814,7 @@ export async function getPortalEvents(
   all?: boolean,
 ): Promise<{ events: VolunteerEvent[] }> {
   const q = all ? '?all=1' : ''
-  return fetchJson(`${API_BASE}/api/portal/events?ein=${ein}${all ? '&all=1' : ''}`, {
+  return fetchJson(`/api/portal/events?ein=${ein}${all ? '&all=1' : ''}`, {
     headers: { Authorization: `Bearer ${idToken}` },
   })
 }
@@ -824,7 +824,7 @@ export async function createPortalEvent(
   event: Partial<VolunteerEvent> & { title: string; event_date: string },
   idToken: string,
 ): Promise<VolunteerEvent> {
-  return fetchJson(`${API_BASE}/api/portal/events`, {
+  return fetchJson(`/api/portal/events`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
     body: JSON.stringify({ ein, ...event }),
@@ -836,7 +836,7 @@ export async function updatePortalEvent(
   updates: Partial<VolunteerEvent>,
   idToken: string,
 ): Promise<VolunteerEvent> {
-  return fetchJson(`${API_BASE}/api/portal/events/${eventId}`, {
+  return fetchJson(`/api/portal/events/${eventId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
     body: JSON.stringify(updates),
@@ -848,7 +848,7 @@ export async function cancelPortalEvent(
   reason: string,
   idToken: string,
 ): Promise<{ ok: boolean; notified: number }> {
-  return fetchJson(`${API_BASE}/api/portal/events/${eventId}`, {
+  return fetchJson(`/api/portal/events/${eventId}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
     body: JSON.stringify({ reason }),
@@ -859,7 +859,7 @@ export async function getEventAttendees(
   eventId: number,
   idToken: string,
 ): Promise<{ signups: OrgSignup[]; total: number }> {
-  return fetchJson(`${API_BASE}/api/portal/events/${eventId}/attendees`, {
+  return fetchJson(`/api/portal/events/${eventId}/attendees`, {
     headers: { Authorization: `Bearer ${idToken}` },
   })
 }
@@ -869,7 +869,7 @@ export async function verifyEventHours(
   verifications: Array<{ signup_id: number; hours: number; attended: boolean }>,
   idToken: string,
 ): Promise<{ ok: boolean; updated: number }> {
-  return fetchJson(`${API_BASE}/api/portal/events/${eventId}/verify-hours`, {
+  return fetchJson(`/api/portal/events/${eventId}/verify-hours`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
     body: JSON.stringify({ verifications }),
@@ -881,7 +881,7 @@ export async function getOrgVolunteerEvents(
   opts?: { all?: boolean },
 ): Promise<{ events: VolunteerEvent[] }> {
   const q = opts?.all ? '?all=1' : ''
-  return fetchJson(`${API_BASE}/api/org/${ein}/volunteer-events${q}`)
+  return fetchJson(`/api/org/${ein}/volunteer-events${q}`)
 }
 
 export async function createVolunteerEvent(
@@ -889,7 +889,7 @@ export async function createVolunteerEvent(
   token: string,
   event: Pick<VolunteerEvent, 'title' | 'event_date'> & Partial<Omit<VolunteerEvent, 'id' | 'ein' | 'status' | 'org_name' | 'created_at' | 'updated_at'>>,
 ): Promise<VolunteerEvent> {
-  return fetchJson(`${API_BASE}/api/org/${ein}/volunteer-events`, {
+  return fetchJson(`/api/org/${ein}/volunteer-events`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...event, verification_token: token }),
@@ -901,7 +901,7 @@ export async function updateVolunteerEvent(
   token: string,
   updates: Partial<Omit<VolunteerEvent, 'id' | 'ein' | 'org_name' | 'created_at' | 'updated_at'>>,
 ): Promise<VolunteerEvent> {
-  return fetchJson(`${API_BASE}/api/volunteer-events/${id}`, {
+  return fetchJson(`/api/volunteer-events/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...updates, verification_token: token }),
@@ -909,7 +909,7 @@ export async function updateVolunteerEvent(
 }
 
 export async function cancelVolunteerEvent(id: number, token: string): Promise<void> {
-  await fetchJson(`${API_BASE}/api/volunteer-events/${id}`, {
+  await fetchJson(`/api/volunteer-events/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ verification_token: token }),

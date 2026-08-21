@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { API_BASE } from '../data/api'
 
 export default function VolunteerSubmission() {
   const [searchParams] = useSearchParams()
@@ -26,7 +27,9 @@ export default function VolunteerSubmission() {
     setConfirming(true)
 
     try {
-      const res = await fetch('http://localhost:5000/api/volunteer/claim', {
+      // Fixed 2026-08-21 (LESSONS.md same date): was hardcoded to
+      // http://localhost:5000, broken for every real visitor.
+      const res = await fetch(`${API_BASE}/api/volunteer/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, email }),

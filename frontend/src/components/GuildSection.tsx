@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { normalizeExternalUrl } from '../utils/externalLink'
+import { API_BASE } from '../data/api'
 
 interface Guild {
   guild_id: number
@@ -32,7 +33,10 @@ export default function GuildSection({ ein }: GuildSectionProps) {
   useEffect(() => {
     async function fetchGuild() {
       try {
-        const res = await fetch(`http://localhost:5000/api/org/${ein}/guild`)
+        // Fixed 2026-08-21 (LESSONS.md same date): was hardcoded to
+        // http://localhost:5000, broken for every real visitor -- found via
+        // a Codex-assisted frontend<->backend interconnection audit.
+        const res = await fetch(`${API_BASE}/api/org/${ein}/guild`)
         const data = await res.json()
         if (data.guild_id) {
           setGuild(data)
