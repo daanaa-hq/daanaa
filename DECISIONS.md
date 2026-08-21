@@ -1810,3 +1810,21 @@ create exactly the kind of dual-source-of-truth risk `governance.py`'s
 Parallel dispatch (Agent tool for Claude subagents, `codex exec` for the COO
 lane) and delegation logging are process, not new infrastructure — intended
 to start showing up in `TEAM_LOG.md` from the next multi-lane task onward.
+
+## 2026-08-21: Letter Credits — founder decision, blocked on payment processor
+
+**Founder decision:** the dormant "Letter Credits" B2B feature (nonprofits
+paying Daanaa for direct-mail credits — see 2026-08-19 entry above for the
+P8-miscategorization correction) is blocked, not cancelled: it cannot move
+forward until Daanaa has an actual payment processor connection. No cleanup,
+no removal, no further design work until that dependency exists.
+
+**Why this matters beyond the feature itself:** Daanaa currently has no
+payment processor integrated (`CLAUDE.md`'s "never handle funds" principle —
+all giving is a hand-off to the org's own processor). Any future processor
+integration is itself Material/Constitutional tier under `GOVERNANCE.md`
+(money, regulated activity) and requires its own founder approval and
+stewardship review before Letter Credits can be revisited — this decision
+doesn't pre-approve that future step, it just states the ordering.
+
+**Not done:** no code touched. This is a status update, not a fix.
