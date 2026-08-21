@@ -280,8 +280,16 @@ export default function Directory() {
       per_page: itemsPerPage,
       min_revenue: effectiveMinRevenue > 0 ? effectiveMinRevenue : undefined,
       max_revenue: effectiveMaxRevenue < 500_000_000 ? effectiveMaxRevenue : undefined,
-      verified_revenue: verifiedRevenueOnly || undefined,
-      has_revenue: showOnlyWithRevenue || undefined,  // Filter to orgs with revenue data
+      // Fixed 2026-08-21 (LESSONS.md same date): verifiedRevenueOnly sent a
+      // `verified_revenue` param the backend never read -- the mobile
+      // FilterSheet checkbox (and the desktop "verified revenue" prompt)
+      // looked live but silently filtered nothing. It wants the exact same
+      // thing the working `has_revenue` toggle already does
+      // (total_revenue IS NOT NULL AND total_revenue > 0); combined them
+      // into the one real backend param rather than adding a second,
+      // parallel filter concept. Found via a Codex-assisted interconnection
+      // audit.
+      has_revenue: (showOnlyWithRevenue || verifiedRevenueOnly) || undefined,
       has_website: hasWebsite || undefined,
       hidden_gem: effectiveHiddenGem || undefined,
       needs_funding: needsSupport || undefined,
@@ -290,7 +298,12 @@ export default function Directory() {
       near: near || undefined,
       radius_mi: near ? radiusMi : undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, effectiveMinRevenue, effectiveMaxRevenue, missionTags, revenueBand, verifiedRevenueOnly, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi, randomizeCount, isFusedMode]
+    // showOnlyWithRevenue added 2026-08-21 (LESSONS.md same date): was
+    // missing entirely -- toggling "Has revenue data" only refetched when
+    // it happened to also change currentPage in the same click (setCurrentPage(1)
+    // is a same-handler no-op when already on page 1, silently swallowing the
+    // toggle). Found while fixing the separate verified_revenue param bug above.
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, effectiveMinRevenue, effectiveMaxRevenue, missionTags, revenueBand, verifiedRevenueOnly, showOnlyWithRevenue, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi, randomizeCount, isFusedMode]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
