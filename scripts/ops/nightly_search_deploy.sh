@@ -9,6 +9,8 @@
 #   2. Build search.db (copies registry_enriched + org_fts → /tmp/search_new.db)
 #   3. Integrity check before shipping
 #   4. rsync to droplet (checksum diff — only changed SQLite pages transfer)
+#   4.5. Post-deploy verification: EXPLAIN QUERY PLAN + live search-latency check
+#        (alert-only, added 2026-08-21 — see LESSONS.md 2026-07-18/2026-08-21)
 #   5. Patch changed org precompute files (v5 context that changed since last run)
 #   6. rsync delta org files to droplet
 #   7. Restart droplet API to clear in-memory cache
@@ -91,6 +93,49 @@ rsync --checksum --progress \
 $SSH "mv /data/precompute/v1/search.db.staging /data/precompute/v1/search.db" 2>>"$LOG" \
     || die "atomic swap failed on droplet"
 log "search.db deployed."
+
+# ── Step 4.5: Post-deploy verification (added 2026-08-21) ──────────────────
+# This job ships a fresh SQLite file every night. SQLite's query planner picks
+# join order from table statistics, which get refreshed by every rebuild —
+# so a planner flip (the exact bug class fixed today, commit 44b4bb9e0ac; see
+# LESSONS.md 2026-07-18 and 2026-08-21) could in principle recur purely from
+# data changes even with correct code. Alert-only, never blocks/rolls back
+# this step: a search.db rollback is riskier and less validated than the
+# code-file .prev pattern in sync_droplet_api.sh, so this is detection, not
+# an automatic revert.
+log "Step 4.5/6: Verifying query plan + live search latency..."
+PLAN=$($SSH "sqlite3 /data/precompute/v1/search.db \"
+EXPLAIN QUERY PLAN
+WITH fts_candidates AS MATERIALIZED (
+  SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel FROM org_fts
+  WHERE org_fts MATCH 'health' ORDER BY rel LIMIT 2000
+)
+SELECT r.EIN FROM fts_candidates fts
+CROSS JOIN registry_enriched r ON r.EIN = fts.ein
+WHERE subsection = '3' AND deductibility = '1'
+LIMIT 24;\"" 2>>"$LOG" || echo "PLAN_CHECK_FAILED")
+if ! echo "$PLAN" | grep -q "MATERIALIZE fts_candidates"; then
+    log "WARN: query plan does not show MATERIALIZE fts_candidates as the first step:"
+    log "$PLAN"
+    send_alert "nightly_search_deploy: query plan looks wrong after tonight's rebuild (join-order regression class, LESSONS.md 2026-07-18/2026-08-21). Plan seen:\n\n$PLAN\n\nsearch.db was still deployed — this is a warning, not a block. Check EXPLAIN QUERY PLAN by hand before assuming search is fine."
+else
+    log "Query plan OK (MATERIALIZE fts_candidates first)."
+fi
+
+# Real search-latency check against the live public site, cache-busted (this
+# job's own deploy doesn't wait for it — daanaa_watchdog.py catches ongoing
+# regressions every 5 min separately; this is a same-night, deploy-time
+# tripwire so a bad rebuild doesn't sit undetected until the next cron tick).
+LAT_START=$(date +%s%N)
+LAT_CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 \
+    "https://daanaa.org/api/organizations?q=health&per_page=24&_cb=$(date +%s%N)" 2>>"$LOG" || echo "000")
+LAT_MS=$(( ($(date +%s%N) - LAT_START) / 1000000 ))
+if [ "$LAT_CODE" != "200" ] || [ "$LAT_MS" -gt 3000 ]; then
+    log "WARN: post-deploy search latency check failed (HTTP $LAT_CODE, ${LAT_MS}ms)"
+    send_alert "nightly_search_deploy: post-deploy search latency check failed — HTTP $LAT_CODE, ${LAT_MS}ms (SLO 3000ms). search.db was still deployed. daanaa_watchdog.py will keep monitoring every 5 min."
+else
+    log "Search latency OK: ${LAT_MS}ms"
+fi
 
 # ── Step 5: Patch changed org precompute files ──────────────────────────────
 log "Step 5/6: Patching changed org precompute files..."

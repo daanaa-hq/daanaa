@@ -14,6 +14,20 @@ Alerts security@daanaa.org on STATE CHANGE (fail→ok / ok→fail), plus a
 re-alert every REALERT_HOURS while anything stays down (the 2026-07-05
 outage ran 11h on a single buried transition email). State in
 logs/watchdog_state.json.
+
+AUTO-REMEDIATION (added 2026-08-21): on a fresh search_latency breach, this
+restarts daanaa-api.service once before alerting, and reports the outcome in
+the alert body — never silently. This is a cheap, safe first response (clears
+a stuck worker / cached bad query plan / connection-pool exhaustion) but is
+NOT guaranteed to fix a real code regression (e.g. the 2026-08-21 join-order
+bug itself needed a code fix, not a restart) — the alert always fires either
+way so a human still gets pulled in if the restart didn't help. Confirmed via
+logs/watchdog.log during that incident: this watchdog correctly detected and
+alerted on the regression at 05:10 (one email to security@daanaa.org) but
+nobody saw it in time because NTFY_TOPIC (phone push, see mailer.py) was
+never configured — the exact failure mode mailer.py's own docstring warns
+about from the 2026-08-08 incident. Turning that on is a one-line .env change,
+not a code fix; see mailer.py's docstring for setup steps.
 """
 import json
 import os
@@ -118,6 +132,55 @@ def check_droplet_disk():
         return False, f"SSH failed: {type(e).__name__}"
 
 
+def _wait_for_ready(max_wait_s=120, interval_s=5):
+    """Poll the real public site for HTTP 200, not a fixed sleep. This service
+    preloads 546K embeddings before it can serve (--preload, 45s-2min observed)
+    — a fixed short sleep here would produce the exact false-positive-502
+    pattern documented in LESSONS.md 2026-08-18. Mirrors the proven pattern in
+    sync_droplet_api.sh (same 24x5s = 120s budget)."""
+    for _ in range(max_wait_s // interval_s):
+        try:
+            r = requests.get("https://daanaa.org/", timeout=5)
+            if r.status_code == 200:
+                return True
+        except Exception:
+            pass
+        time.sleep(interval_s)
+    return False
+
+
+def remediate_search_latency():
+    """Cheap, safe first response to a fresh search_latency breach: restart
+    daanaa-api.service (clears a stuck worker / cached bad SQLite query plan /
+    exhausted connection pool), wait for real readiness, then re-check once.
+
+    NOT guaranteed to fix a genuine code regression — the 2026-08-21
+    join-order bug itself needed a code fix (commit 44b4bb9e0ac), a restart
+    alone would not have resolved it. Returns a short human-readable outcome
+    string for the alert body; never raises (a remediation attempt must not
+    prevent the alert from firing)."""
+    try:
+        subprocess.run(
+            ["ssh", "-i", SSH_KEY, "-o", "ConnectTimeout=10",
+             "-o", "StrictHostKeyChecking=accept-new", DROPLET,
+             "systemctl restart daanaa-api"],
+            timeout=20, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+        )
+    except Exception as e:
+        return f"auto-remediation: restart command failed ({type(e).__name__}) — manual action needed"
+
+    if not _wait_for_ready():
+        return "auto-remediation: restarted daanaa-api but site did not come back within 120s — manual action needed"
+
+    ok, detail, _ = check_search_latency(prev_breach=False)
+    if ok and "breach" not in detail:
+        return f"auto-remediation: restarted daanaa-api, search now OK ({detail})"
+    return (f"auto-remediation: restarted daanaa-api, search STILL slow ({detail}) "
+            "— this is a code regression, not a transient issue; see LESSONS.md "
+            "2026-07-18 / 2026-08-21 (join-order class) and EXPLAIN QUERY PLAN "
+            "the hot query before doing anything else")
+
+
 def main():
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     prev = {}
@@ -150,6 +213,14 @@ def main():
         if prev.get(name, "ok") != state[name]:
             changes.append(f"{name}: {prev.get(name, 'ok')} -> {state[name]} ({detail})")
 
+    # Auto-remediation: fire once, only on the FRESH transition into breach
+    # (never on every "STILL down" re-alert — that would restart-loop a
+    # service that's down for a reason a restart can't fix). Runs before the
+    # alert is built so the outcome can be included in it.
+    remediation_note = None
+    if state.get("search_latency") == "down" and prev.get("search_latency", "ok") != "down":
+        remediation_note = remediate_search_latency()
+
     # Re-alert while down: one buried transition email cost 11h on 2026-07-05
     stale_downs = [n for n, s in state.items() if s == "down"]
     now_ts = datetime.now().timestamp()
@@ -167,7 +238,9 @@ def main():
     if changes:
         downs = [n for n, s in state.items() if s == "down"]
         if downs:
-            subject = f"[Daanaa ALERT] {', '.join(downs)} down"
+            auto_fixed = bool(remediation_note) and "search now OK" in remediation_note
+            subject = (f"[Daanaa {'AUTO-FIXED' if auto_fixed else 'ALERT'}] "
+                       f"{', '.join(downs)} {'(recovered by watchdog)' if auto_fixed else 'down'}")
             hints = {
                 "claim_path":   "SSH tunnel dropped → systemctl --user restart daanaa-claim-tunnel",
                 "wallet_proxy": "Wallet tunnel down (same as claim tunnel) or local API auth broken",
@@ -175,17 +248,20 @@ def main():
                 "public_site":  "ssh root@107.170.26.8 'systemctl restart daanaa-api'",
                 "homepage":     "Pages 500 while /health OK → check journalctl -u daanaa-api on droplet; likely bad droplet_api.py deploy → restore /opt/daanaa/droplet_api.py.prev + restart",
                 "search":       "FTS index empty → cd ~/meritgiving && venv/bin/python3 scripts/build_fts_index.py --rebuild && bash scripts/deploy_browse.sh",
-                "search_latency": "Search slow but up → reproduce ONCE isolated on the droplet, then EXPLAIN QUERY PLAN (join-order flip class, LESSONS.md 2026-07-18); check for concurrent deploys/backups pinning droplet CPU before touching code",
+                "search_latency": "Watchdog already tried an auto-restart (see outcome above)." if remediation_note
+                                   else "Search slow but up → reproduce ONCE isolated on the droplet, then EXPLAIN QUERY PLAN (join-order flip class, LESSONS.md 2026-07-18); check for concurrent deploys/backups pinning droplet CPU before touching code",
                 "droplet_disk": "Droplet disk full → ssh root@107.170.26.8 'du -sh /data/precompute/v1/*/* | sort -rh | head -20'",
             }
             hint = "\n".join(f"• {n}: {hints[n]}" for n in downs if n in hints)
         else:
             subject = "[Daanaa OK] all systems recovered"
             hint = "No action needed."
+        remediation_block = f"\n\nAuto-remediation attempted:\n{remediation_note}\n" if remediation_note else ""
         send_ops_email("security@daanaa.org", subject,
                        f"Watchdog state change at {now}\n\n" + "\n".join(changes) +
+                       remediation_block +
                        f"\n\nCurrent: {json.dumps(state, indent=2)}\n\nFix hints:\n{hint}\n")
-        print(f"{now} alerted: {changes}")
+        print(f"{now} alerted: {changes}" + (f" | {remediation_note}" if remediation_note else ""))
     else:
         print(f"{now} no change: {json.dumps(state)}")
 
