@@ -29,12 +29,21 @@ log "=== ENRICHMENT LOOP STARTED (8pm-8am CST window) ==="
 log "Cutoff: Stop new batches at $CUTOFF_HOUR:00am CST"
 log "Logs: $LOG_FILE"
 
+# Fixed 2026-08-21 (LESSONS.md same date): both scripts/enrichment_preflight.py
+# and scripts/enrich_batch.py below referenced stale pre-2026-08-12-migration
+# paths. Confirmed via logs/enrichment-loop-20260821.log: today's 2am run
+# aborted immediately at the preflight check ("No such file or directory")
+# -- the entire nightly enrichment window (8pm-8am) has likely been dead
+# since the migration, over a week. Found via a mechanical repo-wide sweep
+# for broken scripts/X.py references, cross-checked against which callers
+# are actually cron-scheduled.
+#
 # Pre-flight checks — exit early if infrastructure not ready (prevents wasting 8 hours on connection errors)
 log ""
 log "Running pre-flight checks..."
 cd "$REPO"
 source "$VENV"
-if ! python3 scripts/enrichment_preflight.py --strict >> "$LOG_FILE" 2>&1; then
+if ! python3 scripts/core/enrichment_preflight.py --strict >> "$LOG_FILE" 2>&1; then
   log "❌ PRE-FLIGHT CHECKS FAILED — Aborting enrichment loop"
   log "Inference servers or database not ready. Check and restart manually."
   exit 1
@@ -79,7 +88,7 @@ while true; do
   SECONDS_LEFT=$(( CUTOFF_EPOCH - NOW_EPOCH ))
   log "Batch deadline: ${SECONDS_LEFT}s until ${CUTOFF_HOUR}:00 cutoff"
   timeout --signal=TERM "${SECONDS_LEFT}s" \
-    python3 scripts/enrich_batch.py --workers 8 2>&1 | tee -a "$LOG_FILE"
+    python3 scripts/enrichment/enrich_batch.py --workers 8 2>&1 | tee -a "$LOG_FILE"
   BATCH_STATUS=${PIPESTATUS[0]}
   if [ "$BATCH_STATUS" = "124" ]; then
     log "=== BATCH KILLED AT CUTOFF (deadline reached — this is by design) ==="

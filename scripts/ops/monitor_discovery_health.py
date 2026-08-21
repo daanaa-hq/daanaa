@@ -134,7 +134,7 @@ def check_health():
 
     if not daemon_running:
         logger.critical("🚨 ALERT: Discovery daemon is not running")
-        logger.critical("   Action: Restart with: nohup python3 scripts/discovery_daemon.py 100 > logs/discovery_daemon.log 2>&1 &")
+        logger.critical("   Action: Restart with: nohup python3 scripts/discovery/discovery_daemon.py 100 > logs/discovery_daemon.log 2>&1 &")
         return False
 
     # 2026-08-10 fix: the ORIGINAL alert condition was

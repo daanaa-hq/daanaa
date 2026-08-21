@@ -10,6 +10,11 @@ Orchestrates automated discovery pipeline:
 
 Designed to run daily or on-demand. Produces clear stats + logging.
 
+Fixed 2026-08-21 (LESSONS.md same date): the extract_990_fields.py and
+web_finder_agent.py subprocess calls below used stale pre-2026-08-12-migration
+absolute paths -- this daily job (11am cron) had been silently failing to
+launch either sub-step since the migration.
+
 Usage:
     python3 scripts/nonprofit_discovery_orchestrator.py
     python3 scripts/nonprofit_discovery_orchestrator.py --batch-size 500 --dry-run
@@ -109,7 +114,7 @@ def run_irs_extraction(batch_size=1000, dry_run=False):
         result = subprocess.run(
             [
                 "python3",
-                str(Path.home() / "meritgiving/scripts/extract_990_fields.py"),
+                str(Path.home() / "meritgiving/scripts/enrichment/extract_990_fields.py"),
             ],
             capture_output=True,
             text=True,
@@ -176,7 +181,7 @@ def run_web_finder(batch_size=1000, dry_run=False):
         result = subprocess.run(
             [
                 "python3",
-                str(Path.home() / "meritgiving/scripts/web_finder_agent.py"),
+                str(Path.home() / "meritgiving/scripts/discovery/web_finder_agent.py"),
                 "--limit",
                 str(batch_size),
                 "--priority",

@@ -45,7 +45,9 @@ mkdir -p "$(dirname "$LOG_FILE")"
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] Running ingest..."
   cd "$BASE_DIR"
   source "$VENV_BIN/activate"
-  "$VENV_BIN/python3" -u scripts/ingest_gt990_index.py --index "$CACHE_FILE"
+  # Fixed 2026-08-21 (LESSONS.md same date): stale pre-2026-08-12-migration
+  # path (real location: scripts/migrations/ingest_gt990_index.py).
+  "$VENV_BIN/python3" -u scripts/migrations/ingest_gt990_index.py --index "$CACHE_FILE"
 
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] GT990 refresh completed successfully"
 } >> "$LOG_FILE" 2>&1

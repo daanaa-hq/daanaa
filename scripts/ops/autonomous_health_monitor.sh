@@ -101,7 +101,12 @@ check_discovery_daemon() {
         return 0
     else
         alert "Discovery daemon stopped, attempting restart..."
-        cd ~/meritgiving && nohup python3 scripts/discovery_daemon.py 100 > /tmp/discovery_daemon_restart.log 2>&1 &
+        # Fixed 2026-08-21 (LESSONS.md same date): stale pre-2026-08-12-migration
+        # path (real location: scripts/discovery/discovery_daemon.py). This
+        # auto-restart had never actually been exercised since the migration
+        # (daemon happened to stay up), so the break was latent, not yet damaging
+        # -- found via a repo-wide sweep, not a real outage.
+        cd ~/meritgiving && nohup python3 scripts/discovery/discovery_daemon.py 100 > /tmp/discovery_daemon_restart.log 2>&1 &
         sleep 2
 
         RETRY_PID=$(pgrep -f "discovery_daemon.py" | head -1)

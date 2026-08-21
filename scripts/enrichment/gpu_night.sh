@@ -42,14 +42,20 @@ start() {
     done
   fi
 
-  if pgrep -f "scripts/generate_missions" >/dev/null; then
+  # Fixed 2026-08-21 (LESSONS.md same date): both scripts referenced stale
+  # pre-2026-08-12-migration paths (real location: scripts/enrichment/missions/).
+  # pgrep/pkill patterns here and below (lines ~131-133) switched to bare
+  # filenames (no "scripts/" prefix) so they keep matching regardless of
+  # which subdirectory the script lives in after a future move -- the
+  # "scripts/X" prefix pattern is exactly what broke silently here.
+  if pgrep -f "generate_missions" >/dev/null; then
     echo "[$(ts)] start: mission generation already running — skipping"
   else
     echo "[$(ts)] start: launching mission generation (upgrade template_ntee → AI, then IRS_BMF backlog)"
     # shellcheck disable=SC1091
     source "$BASE/venv/bin/activate"
     cd "$BASE" || exit 1
-    nohup bash -c "python3 scripts/generate_missions.py --workers 6 --upgrade-templates && python3 scripts/generate_missions_irs_bmf.py --workers 6 --upgrade-templates" >> "$GEN_LOG" 2>&1 &
+    nohup bash -c "python3 scripts/enrichment/missions/generate_missions.py --workers 6 --upgrade-templates && python3 scripts/enrichment/missions/generate_missions_irs_bmf.py --workers 6 --upgrade-templates" >> "$GEN_LOG" 2>&1 &
   fi
 
   # Donate-link night loop (phase 0 audit + phase 1/2 discovery-release).
@@ -128,9 +134,9 @@ stop() {
   pkill -f "scripts/donation_link_pipeline.py" 2>/dev/null
   echo "[$(ts)] stop: halting web_night discovery loop"
   pkill -f "scripts/web_night.sh" 2>/dev/null
-  pkill -f "scripts/web_finder_agent.py" 2>/dev/null
+  pkill -f "web_finder_agent.py" 2>/dev/null
   echo "[$(ts)] stop: halting mission generation"
-  pkill -f "scripts/generate_missions" 2>/dev/null
+  pkill -f "generate_missions" 2>/dev/null
   # echo "[$(ts)] stop: halting LLM cause-tag enrichment"
   # pkill -f "scripts/enrich_cause_tags_llm.py" 2>/dev/null
   sleep 2
