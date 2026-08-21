@@ -6,6 +6,60 @@
 
 ---
 
+## 2026-08-21: Geography filter (OrgContextFilters) shipped UI-only, not wired to results
+
+**Issue:** Phase 3B.4 built a "Serves in [state]" discovery filter (mission tags,
+geography, revenue band). Mission and Financial wired correctly to real backend
+filters. Geography could not: `extracted_metadata.service_area_states` (a Codex
+draft's proposed data source) doesn't exist as a column on `registry_enriched`, and
+the only other candidate, `org_service_areas`, has 1 row across 1.7M+ orgs.
+
+**Chose:** Ship the Geography control UI-only -- state selection tracked, synced to
+the URL, but does not narrow results. Documented in-line in `daanaa_api.py` and
+`Directory.tsx`. Rejected wiring it to either data source: both would silently
+no-op (donor picks a state, nothing narrows, looks broken) -- worse than an honest
+gap under Stewardship P3 (evidence-based trust signals).
+
+**Rejected:** Removing the control entirely -- keeps the UX slot ready for when
+real service-area data exists at scale, per the original OrgContextFilters design.
+
+## 2026-08-21: Full-repo quality audit (Codex-assisted) — see LESSONS.md for the incident chain
+
+A single "is this system consistent, not vibe-coded" question surfaced a chain of
+real, previously-silent production gaps this session: the nightly search-deploy
+pipeline writing to a path nothing reads since the 2026-08-08 droplet rebuild, 6
+cron jobs silently failing every run (wrong working directory assumption, no MTA
+to surface the failure), and the entire overnight enrichment + GPU mission-
+generation pipeline dead since the 2026-08-12 folder migration -- all fixed and
+verified same-session. A follow-up 4-phase Codex audit (frontend<->backend
+interconnection, Stewardship principle alignment, offerings-vs-claims alignment,
+UX consistency) found and fixed: two hardcoded-localhost production bugs, an
+API-base URL-doubling bug, a fake "Save" button, a recurring nested-interactive-
+element accessibility bug (OrgCard.tsx, same class already fixed once in
+SearchResultCard.tsx but didn't generalize), a red-to-green judgment-coded
+reserve bar + "At-risk" language on SectorHealth.tsx (violates DESIGN.md's own
+No Shame Rule), and a silently-ignored `verified_revenue` filter (plus a missing
+`useEffect` dependency found while fixing it).
+
+**Two items surfaced but deliberately NOT fixed in this pass -- founder-gated
+per CLAUDE.md (public claims / methodology):**
+- Org detail pages show "Top X%" while the public methodology page states Daanaa
+  "does not rate, rank, endorse, or recommend" -- a direct tension between what
+  ships and what's promised.
+- `frontend/public/pages/methodology.md` describes the retired 4-tier/20-peer
+  system; the shipped UI uses V6 (Full/Regional/Broad/Archetype-only context).
+  CLAUDE.md explicitly gates "the published pages that explain [methodology]",
+  not just the scoring logic itself -- corrected an earlier in-session
+  misclassification of this as safe-to-autonomously-fix documentation hygiene.
+
+**Also found, not yet resolved (business decision, not a bug):** a dormant,
+unwired "Letter Credits" B2B feature (nonprofits paying Daanaa for direct-mail
+credits, not donor funds -- initially miscategorized by Codex as a Stewardship
+P8 violation; corrected after checking who actually pays). Founder is deciding
+whether the feature is still wanted before any cleanup.
+
+---
+
 ## 2026-08-19: Small Org Clarity Phase 3C — Visible "Why This Matches" Over Collapsible Disclosure
 
 **Issue:** Phase 3 checkpoint (2026-08-09) proposed an `AdditionalOrgContext` collapsible card at end of Deep Dive section. Board simulation (4 expert perspectives) rejected it as solving the wrong problem: misdiagnosed visibility as a detail-layout issue when the real problem is discovery-stage salience.
