@@ -133,3 +133,33 @@ designed. Captured as migrations/028_v6_scoring_runs_single_active_guardrail.sql
 so it's reproducible for the droplet's DB later, not a one-off manual edit.
 Local DB only -- not deployed. Full plan (Phases 1-5) still needs founder
 review before continuing.
+
+### 2026-08-21 — CEO + COO: Phase A executed (ledger retired, endpoint rewired)
+
+**Mode:** danger-full-access (Codex actually writing files now, sandbox
+fixed earlier today — see the 2026-08-21 sandbox-fix entry above)
+**What happened:** three-part split of who did what, by design (founder:
+"let Codex do the heavy lifting"). CEO: backed up + verified + dropped the
+three dead ledger tables (9.36M + 52.8K rows, 287MB compressed backup,
+integrity-checked). COO (danger-full-access): rewrote
+`scripts/scoring/v6_financial_context_api.py` off the dropped ledger onto
+real `registry_enriched` columns per an exact schema spec, and archived the
+8 files that referenced the dead schema via `git mv` (preserves history).
+**CEO verification, not rubber stamp:** read the full rewritten file before
+committing, then actually ran it against a real EIN rather than trusting
+the diff — confirmed honest output (real tier, real percentile, explicit
+`None` for every field with no real backing source, no fabrication).
+Caught one thing Codex's diff alone wouldn't have shown: `scoreable_peer_count`
+(425) exceeds `peer_count` (37) for the test org — a pre-existing column
+semantics quirk in the scorer's own output, not introduced by this rewrite,
+logged as a follow-up observation, not blocking.
+**Also caught mid-flow:** the earlier-approved badge wording fix
+(`WhyTrustThem.tsx`/`V5Context.tsx`, "stronger reserves than X%") had never
+actually been committed — sitting in the working tree since it was made.
+Committed separately before the v6 work so it didn't get silently bundled
+in.
+**Result:** 4 commits pushed (badge-fix recovery, ledger drop's endpoint
+rewire, archive move, migration file). Phase A complete. Phase B (audit
+trail — Codex's pushback: single-row run log is necessary but not
+sufficient, needs an immutable per-org record too, not the abandoned
+mutable ledger) not started this session.
