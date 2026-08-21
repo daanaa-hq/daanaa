@@ -7,7 +7,10 @@ registry_enriched. The index covers organization name, mission, location,
 category, and cause tags — enabling semantic keyword search that surfaces
 relevant orgs by mission, not just name substring matches.
 
-Only indexes tax-deductible, active orgs (deductibility=1, org_status='active').
+Only indexes orgs the API would actually serve: subsection='3', deductibility=1,
+not IRS-revoked, org_status != 'revoked' -- matches daanaa_api.py's
+_DEDUCTIBILITY_FILTER exactly (corrected 2026-08-21; the prior predicate
+under/over-indexed ~24K orgs relative to the live endpoint, see LESSONS.md).
 
 Run after every major data update (IRS sync, re-scoring, enrichment).
 
@@ -70,9 +73,18 @@ def build(db: sqlite3.Connection, rebuild: bool) -> None:
         log.info("FTS5 table created.")
 
         log.info("Counting tax-deductible, active orgs...")
+        # Predicate must match daanaa_api.py's _DEDUCTIBILITY_FILTER exactly --
+        # the endpoint is the single source of truth for "should this org be
+        # findable." Previously this only checked deductibility+org_status,
+        # missing subsection='3' and irs_revoked, which let 17,176 orgs the
+        # endpoint would never actually serve stay searchable (found 2026-08-21
+        # while investigating a search-latency incident; see LESSONS.md).
         total = db.execute("""
             SELECT COUNT(*) FROM registry_enriched
-            WHERE organization_name IS NOT NULL AND deductibility = 1 AND org_status = 'active'
+            WHERE organization_name IS NOT NULL
+              AND subsection = '3' AND deductibility = 1
+              AND COALESCE(irs_revoked, 0) != 1
+              AND COALESCE(org_status, '') != 'revoked'
         """).fetchone()[0]
         log.info(f"Indexing {total:,} orgs in batches of {BATCH_SIZE:,}...")
 
@@ -95,8 +107,9 @@ def build(db: sqlite3.Connection, rebuild: bool) -> None:
                     COALESCE(cause_tags, '{}')
                 FROM registry_enriched
                 WHERE organization_name IS NOT NULL
-                  AND deductibility = 1
-                  AND org_status = 'active'
+                  AND subsection = '3' AND deductibility = 1
+                  AND COALESCE(irs_revoked, 0) != 1
+                  AND COALESCE(org_status, '') != 'revoked'
                 ORDER BY EIN
                 LIMIT ? OFFSET ?
             """, (BATCH_SIZE, offset))
