@@ -80,3 +80,23 @@ in the CEO's own framing (said "7 colors," map actually has 9 including the
 for all 9 values, each with its own category label in the reason string
 (shared config, reviewable in `.impeccable/config.json`). No code changed —
 these colors were already correct, only the lint suppression was missing.
+
+### 2026-08-21 — CEO independent fix: redundant side-tab border removal
+
+**Mode:** none (no COO round-trip — see `TEAM.md` §3 "not everything needs a
+second opinion")
+**Directive:** none dispatched. Founder gave standing feedback: "work
+progressively while being unique in perspective." Read `SectorHealth.tsx`'s
+table-row render directly rather than asking Codex for a take on "how to
+soften a side-tab border."
+**Finding:** the flagged `border-l-4` side-tab was redundant, not just
+loud — the same row already carries its category color twice (the `dot`
+inside the badge pill, and the row's `bg` tint). The fix is removal, not a
+subtler shade. Also caught, unrelated to the hook, by comparing all 8 rows
+side by side: `religion_spiritual`'s `bg-alert-amber/5/40` is not valid
+Tailwind (double opacity suffix) — that row alone silently had no background
+tint while its 7 siblings did.
+**CEO action:** Removed the `border` field from `GROUP_META` and its one
+call site; fixed the malformed class to `bg-amber-50/40` matching siblings.
+Typecheck + build verified. Committed (`31f6a35cc01`), not deployed. First
+slice of the deferred side-tab migration bucket — this file only.

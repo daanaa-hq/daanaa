@@ -130,6 +130,26 @@ section now does.
   actually guarantee is accurate (no risk of a chat transcript being
   reconstructed or paraphrased after the fact).
 
+**Independent judgment before consensus (Founder guidance, 2026-08-21).**
+Parallel dispatch exists to combine distinct viewpoints, not to launder one
+answer through two names. Two failure modes to actively avoid:
+- **The CEO forms its own view before asking the COO**, and states it in the
+  directive's framing where useful, rather than posing every question as a
+  blank slate — an opinion arrived at independently is worth more than one
+  backfilled to match whatever comes back.
+- **Agreement is not automatically progress.** When CEO and COO converge,
+  say why the convergence is real (as in the SectorHealth color-suppression
+  case) rather than treating "we agree" as the goal. When they diverge, the
+  disagreement itself is reported to the Founder, not smoothed into a single
+  recommendation — a partnership that always resolves to consensus is not
+  adding a second perspective, it's adding delay.
+- **Not everything needs a second opinion.** Bounded, low-risk calls the CEO
+  can reason through directly (e.g. the redundant-border removal in
+  `SectorHealth.tsx`, reasoned from the render code itself) are made and
+  logged without a COO round-trip. Reserve COO consultation for where a
+  genuinely independent read changes the answer or the founder asked for
+  both views — not as a default ritual on every decision.
+
 ---
 
 ## 4. Escalation — only for judgment calls
