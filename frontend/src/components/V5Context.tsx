@@ -33,10 +33,14 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
   const style = SIGNAL_STYLE[v5.score.health_signal]
   const label = SIGNAL_LABEL[v5.score.health_signal]
 
-  // Only show "Top X%" for healthy/stable orgs — for CAUTION orgs the
-  // health badge is the signal; the percentile number creates a mixed message
-  const showTopPct = v5.score.health_signal !== 'CAUTION'
-  const topPct = Math.max(1, Math.round(100 - v5.score.percentile))
+  // Only show the reserve-percentile line for healthy/stable orgs — for
+  // CAUTION orgs the health badge is the signal; a percentile number creates
+  // a mixed message. Phrased as "stronger reserves than X% of peers", not
+  // "Top X%" — reserve months is what's actually measured, and "Top X%"
+  // reads as an overall-worth ranking to a plain reader even when the fine
+  // print scopes it to reserves. See DECISIONS.md 2026-08-21.
+  const showPercentile = v5.score.health_signal !== 'CAUTION'
+  const reservePercentile = Math.min(99, Math.max(1, Math.round(v5.score.percentile)))
 
   const reserves = v5.benchmarks.reserves_months
   const hasOwnReserves = reserves.your_value !== null
@@ -74,10 +78,10 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
 
       {/* Key stat — percentile for healthy/stable; supportive note for CAUTION */}
       <div className="flex items-baseline gap-2 mb-5">
-        {showTopPct ? (
+        {showPercentile ? (
           <>
             <span className={`font-display text-headline-lg font-bold leading-none ${style.text}`}>
-              Top {topPct}%
+              Stronger reserves than {reservePercentile}%
             </span>
             <span className="font-body text-small text-cool-grey">of {v5.peer_group.label}</span>
           </>

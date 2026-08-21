@@ -1,0 +1,1 @@
+These files referenced a scoring-ledger prototype (`v6_scoring_runs`, `v6_peer_context_assignments`, and `v6_conditional_band_context`) that was dropped on 2026-08-21 after being abandoned in favor of `scripts/scoring/daanaa_scorer.py` writing directly to `registry_enriched`; they are retained for reference only and are not runnable as-is because those tables no longer exist.

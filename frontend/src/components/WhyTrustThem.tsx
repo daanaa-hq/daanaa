@@ -135,9 +135,9 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
             <h3 className="font-body text-small font-semibold text-deep-navy mb-3 uppercase tracking-wide">How they compare</h3>
             <div className="space-y-2 mb-3">
               <div className="flex justify-between items-baseline">
-                <span className="font-body text-base text-cool-grey">Financial ranking</span>
+                <span className="font-body text-base text-cool-grey">Reserve position</span>
                 <span className="font-body text-base font-medium text-deep-navy">
-                  Top {Math.round(100 - org.peer_percentile)}% of similar organizations
+                  Stronger than {Math.round(org.peer_percentile)}% of similar organizations
                 </span>
               </div>
               {org.peer_group && (
@@ -154,7 +154,7 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
               )}
             </div>
             <p className="font-body text-small text-cool-grey leading-relaxed">
-              This organization's financial profile places it in the top tier among {org.peer_total} similar organizations in their sector and size range.
+              This organization's reserve position is stronger than {Math.round(org.peer_percentile)}% of {org.peer_total} similar organizations in their sector and size range.
             </p>
           </div>
         )}
