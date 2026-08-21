@@ -183,9 +183,9 @@ export default function SectorHealth() {
           {/* Key stat chips */}
           <div className="mt-10 flex flex-wrap gap-4">
             {[
-              { value: `${Math.round(totalAtRisk / 1000)}K`, label: 'organizations with limited reserve cushion in public filings', color: '#F59E0B' },
-              { value: `${Math.round(totalAtRisk / totalOrgs * 100)}%`, label: 'of indexed 501(c)(3)s with limited savings', color: '#F59E0B' },
-              { value: '84%', label: 'of all orgs have reserve data', color: '#60A5FA' },
+              { value: `${Math.round(totalAtRisk / 1000)}K`, label: 'organizations with limited reserve cushion in public filings', color: 'var(--alert-amber)' },
+              { value: `${Math.round(totalAtRisk / totalOrgs * 100)}%`, label: 'of indexed 501(c)(3)s with limited savings', color: 'var(--alert-amber)' },
+              { value: '84%', label: 'of all orgs have reserve data', color: 'var(--soft-gold)' },
             ].map(stat => (
               <div key={stat.label} className="flex items-baseline gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
                 <span className="font-display text-headline font-medium" style={{ color: stat.color }}>{stat.value}</span>
