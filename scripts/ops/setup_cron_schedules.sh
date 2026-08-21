@@ -51,9 +51,20 @@ cat > "$CRONTAB_TMP" << 'CRON'
 */15 * * * * /home/akbar/meritgiving/scripts/ops/api_watchdog.sh
 */5 * * * * /home/akbar/meritgiving/scripts/ops/watchdog_discovery.sh
 0 * * * * python3 /home/akbar/meritgiving/scripts/ops/monitor_discovery_health.py >> /home/akbar/meritgiving/logs/health_monitor_cron.log 2>&1
-*/30 * * * * python3 scripts/ops/hardware_monitor.py >> logs/hardware_monitor.log 2>&1
-0 * * * * python3 scripts/ops/blitz_efficiency_tracker.py >> logs/blitz_efficiency.log 2>&1
-*/15 * * * * python3 scripts/ops/monitor_phase1.py >> logs/phase1_monitor.log 2>&1
+# Fixed 2026-08-21 (LESSONS.md same date): these three had relative paths
+# with no `cd` prefix. Cron's actual cwd for this user is $HOME
+# (/home/akbar), not ~/meritgiving -- confirmed directly: `>> logs/x.log`
+# from $HOME fails at the shell level ("No such file or directory", ~/logs/
+# doesn't exist) *before* python3 even runs. No MTA is installed, so that
+# failure is silently discarded every single time -- these had never
+# produced a log file, ever, despite firing on schedule (confirmed via
+# journalctl). monitor_phase1.py's entry specifically was masked: a
+# *different*, correctly absolute-pathed job (a skill's own daily runner)
+# happens to write to the same logs/phase1_monitor.log filename, so the
+# file looked healthy while this entry silently failed underneath it.
+*/30 * * * * cd ~/meritgiving && python3 scripts/ops/hardware_monitor.py >> logs/hardware_monitor.log 2>&1
+0 * * * * cd ~/meritgiving && python3 scripts/ops/blitz_efficiency_tracker.py >> logs/blitz_efficiency.log 2>&1
+*/15 * * * * cd ~/meritgiving && python3 scripts/ops/monitor_phase1.py >> logs/phase1_monitor.log 2>&1
 */30 * * * * /home/akbar/meritgiving/scripts/ops/autonomous_health_monitor.sh >> /home/akbar/meritgiving/logs/autonomous_health.log 2>&1
 0 * * * * /home/akbar/meritgiving/scripts/ops/monitor_db_corruption.sh
 0 */2 * * * /home/akbar/meritgiving/scripts/ops/autonomous_precompute_watch.sh
@@ -111,9 +122,16 @@ cat > "$CRONTAB_TMP" << 'CRON'
 0 11 * * * cd /home/akbar/meritgiving && venv/bin/python3 scripts/discovery/nonprofit_discovery_orchestrator.py >> logs/discovery_orchestrator.log 2>&1
 # Discovery efficiency monitor: every 30 min (80%-of-peak reconnect signal)
 */30 * * * * cd /home/akbar/meritgiving && venv/bin/python3 scripts/ops/monitor_discovery_efficiency.py >> logs/efficiency_monitor.log 2>&1
-23 * * * * python3 scripts/discovery/website_discovery_engine.py >> logs/website_discovery.log 2>&1
-0 20 * * * bash scripts/discovery/evening_discovery_batch.sh
-0 18,20,22,0,2,4 * * * bash -c 'source venv/bin/activate && python3 scripts/discovery/multi_agent_discovery.py >> logs/discovery_2hr_checkpoints.log 2>&1' &
+# Fixed 2026-08-21 (same root cause as the monitoring block above, LESSONS.md
+# same date): evening_discovery_batch.sh's relative script path meant cron
+# couldn't even find the file from $HOME ("No such file or directory", exit
+# 127, confirmed directly) -- this job had never run once, silently, since
+# it was added; no redirect target at all means the failure went nowhere
+# (no MTA installed). The other two had the same missing-cd pattern as the
+# monitoring block.
+23 * * * * cd ~/meritgiving && python3 scripts/discovery/website_discovery_engine.py >> logs/website_discovery.log 2>&1
+0 20 * * * cd ~/meritgiving && bash scripts/discovery/evening_discovery_batch.sh >> logs/evening_discovery_batch.log 2>&1
+0 18,20,22,0,2,4 * * * bash -c 'cd ~/meritgiving && source venv/bin/activate && python3 scripts/discovery/multi_agent_discovery.py >> logs/discovery_2hr_checkpoints.log 2>&1' &
 # Parallel discovery agents. agent_coordinator.py was retired to
 # scripts/archive/legacy_agents/ on 2026-08-12 (Task #6 Phase 4 legacy-agent
 # cleanup) -- this job called it silently for 4 days after that with no
