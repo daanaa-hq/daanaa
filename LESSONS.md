@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-08-21: Search join-order regressed again + smoke-tested my own fix 8 seconds too early
+
+**Symptom:** Production search latency was 5-7.7s for common single words (health, food, children, cancer, education, animal) and trending *worse* across repeated tests, well above the 3s threshold. `daanaa-health` skill checklist §2 caught it immediately.
+
+**Root cause:** Same bug class as the 2026-07-18 join-order incident, regressed by the 2026-08-09 BM25-only optimization (`cbb2754188d`) that changed the FTS join shape without re-verifying the plan. `EXPLAIN QUERY PLAN` (run both locally and directly against `/opt/daanaa/data/search.db`) showed SQLite choosing `idx_deductible_active` as the outer loop — scanning the ~1.7M-row eligible-org index and bloom-filtering against the bounded 2,000-row FTS candidate set, instead of the reverse. A plain `JOIN` doesn't constrain planner reordering; only a `MATERIALIZED` CTE + `CROSS JOIN` (candidates on the left) does. Fixed in `daanaa_api.py` + `droplet_api.py`, verified via `EXPLAIN QUERY PLAN` + functional-equivalence test (identical result sets, including a needed `r.EIN` tiebreak the old under-specified `ORDER BY` was silently relying on physical scan order for) + timing (4-9x faster on production data, stable across alternating run order to rule out cache-warming noise).
+
+**Second, self-inflicted symptom:** Deployed the fix, smoke-tested 3 seconds after `systemctl restart`, got 502 on every page and treated it as a possible failed deploy — before checking the already-documented 2026-08-18 lesson two entries below this one, which describes the *exact same false alarm*: `--preload` loads 546K embeddings into the gunicorn master before forking workers (observed 45s-2min18s this run), and any request in that window gets an instant connection-refused, not a slow response. `sync_droplet_api.sh` already has a readiness poll for this — I did a manual restart+smoke without it, so I hit the bug the poll exists to prevent, in the same file whose LESSONS.md entry documents it.
+
+**Also found while fixing:** production's `search.db` has 17,176 FTS rows that fail the endpoint's current, stricter eligibility predicate (builder indexes `deductibility`+active only; endpoint also filters `subsection`+revoked) — a semantic mismatch, not a latency cause, left for `build_fts_index.py` to reconcile separately. And a genuinely separate, narrower remaining bottleneck: very high-cardinality terms (education: 378K FTS matches, roughly 4s) still pay a real cost in the FTS `MATCH`+bm25-rank+`LIMIT 2000` step itself, which the join-order fix doesn't touch — a possible future follow-up, not a regression from this fix.
+
+**Preventing rule:** (1) After any change to a JOIN/subquery shape in a hot query, run `EXPLAIN QUERY PLAN` before AND after — a working index doesn't guarantee the planner keeps using it the way you intend, and this is the second time this exact class of regression has shipped silently. (2) Before manually restarting a `--preload` gunicorn service and smoke-testing, check whether a readiness-aware deploy script already exists for that service (`sync_droplet_api.sh` here) and use it, or at minimum poll for the app's actual "ready" log line / a passing health check before concluding a deploy failed — an immediate 502 after restart on a `--preload` service is expected, not a crash signal, until proven otherwise by checking the log.
+
+---
+
 ## 2026-08-19: Code Review Must Happen Before Production Deploy
 
 **Symptom:** Phase 3C small-org-clarity components deployed to daanaa.org (2026-08-19 19:08 UTC), then code review executed (triggered at 19:30). Review found 5 real defects: button-in-Link navigation bug, mission-text duplication, dead imports, redundant null checks. All required fixes + redeployment.
