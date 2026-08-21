@@ -59,15 +59,23 @@ PYEOF
 }
 
 # ── Step 1: Rebuild FTS5 index ──────────────────────────────────────────────
+# Path fixed 2026-08-21: was scripts/build_fts_index.py (pre-2026-08-12
+# folder-migration location). This had silently FATAL'd every single night
+# since at least 2026-08-14 (confirmed via logs/nightly_search_deploy.log --
+# "Step 1/6" then immediately "FATAL: FTS rebuild failed", every night, no
+# exceptions) -- production search.db had not actually been rebuilt in over
+# a week. Found while checking whether new IRS data had come in; see
+# LESSONS.md 2026-08-21.
 log "Step 1/6: Rebuilding FTS5 index..."
-python3 scripts/build_fts_index.py --rebuild >> "$LOG" 2>&1 \
+python3 scripts/search/build_fts_index.py --rebuild >> "$LOG" 2>&1 \
     || die "FTS rebuild failed"
 log "FTS rebuild done."
 
 # ── Step 2: Build search.db ─────────────────────────────────────────────────
+# Path fixed 2026-08-21, same cause as Step 1 above.
 log "Step 2/6: Building search.db..."
 OUT="/tmp/search_new_$(date +%Y%m%d).db"
-python3 scripts/build_search_db.py --out "$OUT" >> "$LOG" 2>&1 \
+python3 scripts/search/build_search_db.py --out "$OUT" >> "$LOG" 2>&1 \
     || die "build_search_db failed"
 SIZE=$(du -sh "$OUT" | cut -f1)
 log "search.db built: $OUT ($SIZE)"
