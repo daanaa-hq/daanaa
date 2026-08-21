@@ -125,10 +125,16 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
   }
 
   return (
-    <Link
-      to={`/org/${org.id}`}
-      className="flex items-center gap-4 bg-white border border-light-grey rounded-xl px-5 py-4 transition-all duration-200 hover:border-soft-gold/50 hover:shadow-card"
-    >
+    // Fixed 2026-08-21 (LESSONS.md same date): was a single <Link> wrapping
+    // the whole card, including nested <Link>/<button>/<a> elements for
+    // cause tags, compare, visit-website, and the wallet hearts. Nested
+    // interactive elements inside an <a> are invalid HTML regardless of
+    // stopPropagation() workarounds -- inconsistent focus/keyboard behavior,
+    // unreliable screen-reader announcement. Found via a Codex-assisted
+    // UX-consistency audit; same restructuring already applied to
+    // SearchResultCard.tsx (a sibling clickable title Link + a sibling
+    // actions row, not one giant wrapping Link).
+    <article className="flex items-center gap-4 bg-white border border-light-grey rounded-xl px-5 py-4 transition-all duration-200 hover:border-soft-gold/50 hover:shadow-card">
       {/* Lamp tier removed 2026-08-08 (founder). Completes the retirement the
           board began 2026-07-17 when tiers were pulled from the directory filter.
           They rested on assumptions that did not hold; v6 financial context
@@ -141,8 +147,8 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
           registry_enriched WHERE EIN IS NOT NULL AND deductibility=1 AND
           org_status='active'; -- figures will drift as the registry grows. */}
 
-      {/* Name + fact + location */}
-      <div className="flex-1 min-w-0">
+      {/* Name + fact + location — the clickable area */}
+      <Link to={`/org/${org.id}`} className="flex-1 min-w-0 block">
         <h3 className="font-display text-lead text-deep-navy hover:text-soft-gold transition-colors line-clamp-2 mb-0.5">
           {org.name}
         </h3>
@@ -179,21 +185,20 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
             )
           })()}
         </div>
-        {apiOrg?.cause_tags && apiOrg.cause_tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
-            {apiOrg.cause_tags.map(tag => (
-              <Link
-                key={tag}
-                to={`/directory?cause=${encodeURIComponent(tag)}`}
-                onClick={e => e.stopPropagation()}
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-micro hover:bg-soft-gold/20 transition-colors"
-              >
-                {tag}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+      </Link>
+      {apiOrg?.cause_tags && apiOrg.cause_tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-1">
+          {apiOrg.cause_tags.map(tag => (
+            <Link
+              key={tag}
+              to={`/directory?cause=${encodeURIComponent(tag)}`}
+              className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-micro hover:bg-soft-gold/20 transition-colors"
+            >
+              {tag}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Badges */}
       {apiOrg && (
@@ -221,7 +226,6 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
             rel="noopener noreferrer"
             title="Visit their website. From our public records, may not always be current."
             aria-label={`Visit ${org.name}'s website`}
-            onClick={e => e.stopPropagation()}
             className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 text-cool-grey hover:text-soft-gold"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
@@ -235,7 +239,7 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
           onToggleVolunteering={handleVolunteering}
         />
       </div>
-    </Link>
+    </article>
   )
 }
 
@@ -270,64 +274,65 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
   }
 
   return (
-    <Link
-      to={`/org/${org.id}`}
-      className="block bg-white border border-light-grey rounded-xl p-5 transition-all duration-200 hover:border-soft-gold/50 hover:-translate-y-[3px] hover:shadow-card"
-    >
+    // Fixed 2026-08-21 — same class of fix as OrgCardRow above: was one
+    // giant <Link> wrapping nested <Link>/<button>/<a> elements.
+    <article className="block bg-white border border-light-grey rounded-xl p-5 transition-all duration-200 hover:border-soft-gold/50 hover:-translate-y-[3px] hover:shadow-card">
+      <Link to={`/org/${org.id}`} className="block">
         {/* Top row: name (lamp tier removed 2026-08-08 — see note above) */}
-      <div className="flex items-start gap-3 mb-1.5">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-display text-title-sm text-deep-navy leading-tight hover:text-soft-gold transition-colors line-clamp-2">
-            {org.name}
-          </h3>
-          {inlineFact && (
-            <p className="font-body text-label text-link-gold mt-0.5 leading-none">{inlineFact}</p>
-          )}
-          {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
-            <p className="font-body text-micro text-cool-grey mt-0.5 leading-none">
-              {apiOrg.match_sources.includes('keyword') && apiOrg.match_sources.includes('semantic')
-                ? 'Matched by name and meaning'
-                : apiOrg.match_sources.includes('semantic')
-                ? 'Matched by meaning'
-                : 'Matched by name'}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Location */}
-      <div className="flex items-center gap-1.5 mb-2">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7A7166" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-        </svg>
-        <span className="font-body text-caption text-cool-grey">
-          {[org.city, org.state].filter(Boolean).join(', ') || 'IRS registered'}
-        </span>
-      </div>
-
-      {/* Category — human-readable, two-level */}
-      {org.subcategory && (() => {
-        const { major, sub } = getNteeInfo(org.subcategory)
-        const label = sub ?? major
-        if (!label) return null
-        return (
-          <div className="mb-3">
-            <span
-              title={org.subcategory}
-              className="inline-flex flex-col px-2.5 py-1 rounded-lg bg-soft-gold/8 cursor-default"
-            >
-              {major && sub && (
-                <span className="font-body text-micro text-cool-grey leading-tight tracking-[0.05em] uppercase">
-                  {major}
-                </span>
-              )}
-              <span className="font-body text-label text-deep-navy/70 font-medium leading-tight">
-                {label}
-              </span>
-            </span>
+        <div className="flex items-start gap-3 mb-1.5">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-display text-title-sm text-deep-navy leading-tight hover:text-soft-gold transition-colors line-clamp-2">
+              {org.name}
+            </h3>
+            {inlineFact && (
+              <p className="font-body text-label text-link-gold mt-0.5 leading-none">{inlineFact}</p>
+            )}
+            {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
+              <p className="font-body text-micro text-cool-grey mt-0.5 leading-none">
+                {apiOrg.match_sources.includes('keyword') && apiOrg.match_sources.includes('semantic')
+                  ? 'Matched by name and meaning'
+                  : apiOrg.match_sources.includes('semantic')
+                  ? 'Matched by meaning'
+                  : 'Matched by name'}
+              </p>
+            )}
           </div>
-        )
-      })()}
+        </div>
+
+        {/* Location */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7A7166" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span className="font-body text-caption text-cool-grey">
+            {[org.city, org.state].filter(Boolean).join(', ') || 'IRS registered'}
+          </span>
+        </div>
+
+        {/* Category — human-readable, two-level */}
+        {org.subcategory && (() => {
+          const { major, sub } = getNteeInfo(org.subcategory)
+          const label = sub ?? major
+          if (!label) return null
+          return (
+            <div className="mb-3">
+              <span
+                title={org.subcategory}
+                className="inline-flex flex-col px-2.5 py-1 rounded-lg bg-soft-gold/8 cursor-default"
+              >
+                {major && sub && (
+                  <span className="font-body text-micro text-cool-grey leading-tight tracking-[0.05em] uppercase">
+                    {major}
+                  </span>
+                )}
+                <span className="font-body text-label text-deep-navy/70 font-medium leading-tight">
+                  {label}
+                </span>
+              </span>
+            </div>
+          )
+        })()}
+      </Link>
 
       {/* Cause tags */}
       {apiOrg?.cause_tags && apiOrg.cause_tags.length > 0 && (
@@ -336,7 +341,6 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
             <Link
               key={tag}
               to={`/directory?cause=${encodeURIComponent(tag)}`}
-              onClick={e => e.stopPropagation()}
               className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-micro hover:bg-soft-gold/20 transition-colors"
             >
               {tag}
@@ -345,40 +349,42 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
         </div>
       )}
 
-      {/* Mission snippet */}
-      {!compact && org.mission && (
-        <p className="font-body text-caption text-cool-grey/80 leading-[1.55] line-clamp-2 mb-2.5 -mt-1">
-          {org.mission}
-        </p>
-      )}
+      <Link to={`/org/${org.id}`} className="block">
+        {/* Mission snippet */}
+        {!compact && org.mission && (
+          <p className="font-body text-caption text-cool-grey/80 leading-[1.55] line-clamp-2 mb-2.5 -mt-1">
+            {org.mission}
+          </p>
+        )}
 
-      {/* Evidence signals: website, mission clarity, data freshness, cause tags */}
-      {!compact && apiOrg && (
-        <div className="mb-2.5">
-          <OrgSignals
-            website={apiOrg.website}
-            website_status={apiOrg.website_status}
-            mission_source={apiOrg.mission_source}
-            cause_tags={apiOrg.cause_tags}
-            latest_tax_year={apiOrg.latest_tax_year}
-            total_revenue={apiOrg.total_revenue}
-            org_status={apiOrg.org_status}
-            irs_revoked={apiOrg.irs_revoked}
-            tax_deductible={apiOrg.tax_deductible}
-          />
-        </div>
-      )}
+        {/* Evidence signals: website, mission clarity, data freshness, cause tags */}
+        {!compact && apiOrg && (
+          <div className="mb-2.5">
+            <OrgSignals
+              website={apiOrg.website}
+              website_status={apiOrg.website_status}
+              mission_source={apiOrg.mission_source}
+              cause_tags={apiOrg.cause_tags}
+              latest_tax_year={apiOrg.latest_tax_year}
+              total_revenue={apiOrg.total_revenue}
+              org_status={apiOrg.org_status}
+              irs_revoked={apiOrg.irs_revoked}
+              tax_deductible={apiOrg.tax_deductible}
+            />
+          </div>
+        )}
 
-      {/* Revenue (secondary) */}
-      {!compact && !org.mission && scored && (
-        <p className="font-body text-caption text-cool-grey mb-2.5">
-          {org.latestTaxYear && <span className="text-link-gold font-medium mr-1.5">FY {org.latestTaxYear}</span>}
-          Revenue: {formatCurrency(org.revenue)}
-        </p>
-      )}
-      {!compact && !org.mission && !scored && org.revenue > 0 && (
-        <p className="font-body text-caption text-cool-grey mb-2.5">Revenue: {formatCurrency(org.revenue)}</p>
-      )}
+        {/* Revenue (secondary) */}
+        {!compact && !org.mission && scored && (
+          <p className="font-body text-caption text-cool-grey mb-2.5">
+            {org.latestTaxYear && <span className="text-link-gold font-medium mr-1.5">FY {org.latestTaxYear}</span>}
+            Revenue: {formatCurrency(org.revenue)}
+          </p>
+        )}
+        {!compact && !org.mission && !scored && org.revenue > 0 && (
+          <p className="font-body text-caption text-cool-grey mb-2.5">Revenue: {formatCurrency(org.revenue)}</p>
+        )}
+      </Link>
 
       {/* Footer: badges stacked above action buttons so Add never gets clipped */}
       <div className="mt-3 pt-2.5 border-t border-light-grey/60">
@@ -404,7 +410,6 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
               rel="noopener noreferrer"
               title="Visit their website. From our public records, may not always be current."
               aria-label={`Visit ${org.name}'s website`}
-              onClick={e => e.stopPropagation()}
               className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 text-cool-grey hover:text-soft-gold"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
@@ -419,6 +424,6 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
           />
         </div>
       </div>
-    </Link>
+    </article>
   )
 }
