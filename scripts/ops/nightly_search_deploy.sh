@@ -88,19 +88,48 @@ ROW_COUNT=$(sqlite3 "$OUT" "SELECT COUNT(*) FROM registry_enriched;" 2>/dev/null
 [ "$ROW_COUNT" -gt 1000000 ] || die "search.db row count too low: $ROW_COUNT"
 log "Integrity OK. registry_enriched rows: $ROW_COUNT"
 
-# ── Step 4: Rsync search.db to droplet ──────────────────────────────────────
+# ── Step 4: Ship search.db to droplet + merge into the real serving DB ──────
+# Re-targeted 2026-08-21 (see LESSONS.md same date). This step shipped to
+# /data/precompute/v1/search.db from 2026-07-06 (commit dac5fdf34ffc, correct
+# at the time -- that WAS the path the then-current lean droplet_api.py read)
+# until the 2026-08-08 bare-snapshot droplet rebuild reset the systemd
+# DB_PATH override to /opt/daanaa/data/merit_registry.db without anyone
+# updating this script to match. Confirmed via logs/nightly_search_deploy.log:
+# every night since silently "succeeded" writing to a path nothing reads --
+# the real serving DB sat at the pre-2026-08-17 row count the whole time.
+#
+# /opt/daanaa/data/merit_registry.db is NOT a read-only precompute artifact --
+# it also holds live, user-generated tables (org_claims, waitlist,
+# wallet_analytics, feedback, donor_users, etc; confirmed via .tables on the
+# droplet). A full-file swap would destroy them. This does a targeted
+# DELETE+INSERT merge of ONLY the three tables this pipeline owns
+# (registry_enriched, org_fts, zip_codes), inside one transaction, leaving
+# every other table untouched.
 log "Step 4/6: Rsyncing search.db to droplet..."
 rsync --checksum --progress \
     -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new" \
-    "$OUT" "$DROPLET:/data/precompute/v1/search.db.staging" >> "$LOG" 2>&1 \
+    "$OUT" "$DROPLET:/tmp/search_new_staging.db" >> "$LOG" 2>&1 \
     || die "rsync search.db failed"
-# Atomic swap
-# Target is the path the lean API actually reads (DATA_DIR/'search.db', see
-# scripts/droplet_api.py:93). Shipping to /data/search.db was a silent no-op —
-# the serving catalog never refreshed (found 2026-07-06, see LESSONS.md).
-$SSH "mv /data/precompute/v1/search.db.staging /data/precompute/v1/search.db" 2>>"$LOG" \
-    || die "atomic swap failed on droplet"
-log "search.db deployed."
+
+log "Merging into live serving DB (registry_enriched, org_fts, zip_codes only)..."
+$SSH "sqlite3 /opt/daanaa/data/merit_registry.db <<'MERGE_SQL'
+ATTACH DATABASE '/tmp/search_new_staging.db' AS src;
+BEGIN;
+DELETE FROM registry_enriched;
+INSERT INTO registry_enriched SELECT * FROM src.registry_enriched;
+DELETE FROM org_fts;
+INSERT INTO org_fts SELECT * FROM src.org_fts;
+DELETE FROM zip_codes;
+INSERT INTO zip_codes SELECT * FROM src.zip_codes;
+COMMIT;
+DETACH DATABASE src;
+MERGE_SQL" 2>>"$LOG" \
+    || die "live DB merge failed"
+
+$SSH "rm -f /tmp/search_new_staging.db" 2>>"$LOG" || log "WARN: staging file cleanup failed (harmless)"
+$SSH "systemctl restart daanaa-api" 2>>"$LOG" && log "API restarted to clear in-process cache." \
+    || die "API restart failed after merge"
+log "search.db merged into live serving DB."
 
 # ── Step 4.5: Post-deploy verification (added 2026-08-21) ──────────────────
 # This job ships a fresh SQLite file every night. SQLite's query planner picks
@@ -112,7 +141,18 @@ log "search.db deployed."
 # code-file .prev pattern in sync_droplet_api.sh, so this is detection, not
 # an automatic revert.
 log "Step 4.5/6: Verifying query plan + live search latency..."
-PLAN=$($SSH "sqlite3 /data/precompute/v1/search.db \"
+# Readiness poll before checking anything: the restart above triggers
+# --preload's embeddings load (45s-2min observed), and a fixed short wait
+# produces the exact false-positive-502 pattern documented in LESSONS.md
+# 2026-08-18. Same bounded-poll pattern as sync_droplet_api.sh.
+READY=0
+for _i in $(seq 1 24); do
+    curl -sS --max-time 5 -o /dev/null -w '%{http_code}' https://daanaa.org/ 2>>"$LOG" | grep -q '^200$' && { READY=1; break; }
+    sleep 5
+done
+[ "$READY" = "1" ] || log "WARN: backend not responding after 120s post-restart -- checks below may fail spuriously"
+
+PLAN=$($SSH "sqlite3 /opt/daanaa/data/merit_registry.db \"
 EXPLAIN QUERY PLAN
 WITH fts_candidates AS MATERIALIZED (
   SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel FROM org_fts
