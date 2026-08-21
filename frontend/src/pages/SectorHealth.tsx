@@ -57,12 +57,20 @@ function formatMonths(v: number | null) {
 }
 
 function ReserveBar({ months }: { months: number | null }) {
+  // Fixed 2026-08-21 (LESSONS.md same date): was a graduated red/amber/
+  // green/blue scale (raw hex, matching this project's own destructive/
+  // alert-amber/success-green tokens exactly) -- a literal red-to-green
+  // judgment gradient, which DESIGN.md's "No Shame Rule" explicitly
+  // prohibits ("no color pattern may progress from good/green to bad/red
+  // framing"). The bar's length already conveys the reserve-months
+  // information; a single neutral fill color doesn't need to layer a
+  // quality judgment on top of it. Found via a Codex-assisted UX/
+  // stewardship audit.
   if (months === null) return <div className="w-full h-1 bg-light-grey rounded-full" />
   const pct = Math.min(100, (months / 120) * 100)
-  const color = months < 3 ? '#EF4444' : months < 12 ? '#F59E0B' : months < 36 ? '#4ADE80' : '#60A5FA'
   return (
     <div className="w-full h-1.5 bg-light-grey rounded-full overflow-hidden">
-      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: color }} />
+      <div className="h-full rounded-full bg-soft-gold transition-all" style={{ width: `${pct}%` }} />
     </div>
   )
 }
@@ -321,25 +329,19 @@ export default function SectorHealth() {
             </div>
           )}
 
-          {/* Reserve breakdown legend */}
-          <div className="mt-8 flex flex-wrap gap-4">
-            {[
-              { color: '#EF4444', label: 'Limited (<3 mo)' },
-              { color: '#F59E0B', label: 'Moderate (3 to 12 mo)' },
-              { color: '#4ADE80', label: 'Adequate (12 to 36 mo)' },
-              { color: '#60A5FA', label: 'Strong (36+ mo)' },
-            ].map(item => (
-              <div key={item.label} className="flex items-center gap-2">
-                <div className="w-3 h-1.5 rounded-full" style={{ background: item.color }} />
-                <span className="font-body text-caption text-cool-grey">{item.label}</span>
-              </div>
-            ))}
-          </div>
-
           {/* Methodology note */}
           <div className="mt-12 pt-8 border-t border-light-grey">
             <p className="font-body text-small text-cool-grey leading-[1.6] max-w-[680px]">
-              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data, approximately 21% of the 1.7 million donation eligible nonprofits Daanaa indexes. The remaining 79% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
+              {/* Fixed 2026-08-21 (LESSONS.md same date): removed the reserve-
+                  breakdown color legend above (Limited/Moderate/Adequate/Strong
+                  mapped to a red-amber-green-blue scale) -- it described a
+                  judgment-coded ReserveBar that's now a single neutral color;
+                  the legend would have been both stale and a re-introduction
+                  of the same "No Shame Rule" violation the bar fix removed.
+                  Also replaced "At-risk" here, which the 2026-08-14 fix
+                  (LESSONS.md) removed elsewhere but didn't generalize to this
+                  page. Found via a Codex-assisted stewardship/UX audit. */}
+              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. "Low-reserve" means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data, approximately 21% of the 1.7 million donation eligible nonprofits Daanaa indexes. The remaining 79% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
               <span className="inline-flex items-center gap-1.5 font-body text-caption text-cool-grey">
