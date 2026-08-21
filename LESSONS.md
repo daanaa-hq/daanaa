@@ -18,6 +18,20 @@
 
 ---
 
+## 2026-08-21 (same day, follow-up): Detection worked, alerting worked, delivery was silently off
+
+**Symptom:** Founder asked "how do we stop this happening again" after the incident above. Assumed the monitoring gap was "nothing checks search latency" and started building a new watchdog script from scratch.
+
+**What was actually true:** `scripts/ops/daanaa_watchdog.py` already had a `check_search_latency()` function — 3s SLO, cache-busted, same probe words, running every 5 minutes via cron — and `logs/watchdog.log` proved it fired *correctly* at 05:10 Central that morning: two consecutive breaches, `q=children 6.7s — over 3.0s SLO twice in a row`, alert sent. Detection was never the gap.
+
+**Root cause of "nobody found out in time":** `scripts/ops/mailer.py` has a fully-built, well-documented phone-push path (`send_push()` via ntfy.sh) — added 2026-08-08 specifically because an earlier outage ran ~14h unnoticed with alerts landing only in `security@daanaa.org`, an inbox nobody watches while away from a desk. That fix was never actually turned on: `NTFY_TOPIC` was never set in `.env`, so `send_push()` silently no-ops (by design — "a push failure must not prevent the email") every single time. One email went out for a multi-hour incident. Nobody saw it until manual investigation started hours later.
+
+**Preventing rule:** When a founder describes a symptom ("I'm not finding out fast enough"), read the actual state (log files, `.env`, what's already built) before assuming new infrastructure is needed. This project has had at least two incidents now (2026-08-08, 2026-08-21) where the *detection and alerting code was already correct* and the actual gap was a single unconfigured environment variable. Building a second, parallel watchdog would have made this worse (two competing sources of truth), not better. Grep for existing solutions to a stated problem before writing new code — especially in a repo with `LESSONS.md`/`DECISIONS.md`/inline comments as thorough as this one; the fix is often already documented, just not switched on.
+
+**Fix applied:** `daanaa_watchdog.py` now auto-remediates a fresh `search_latency` breach (restart + readiness-poll + re-check, always reported, never silent) rather than only alerting. `nightly_search_deploy.sh` gained an alert-only `EXPLAIN QUERY PLAN` + live-latency tripwire on its own nightly `search.db` deploy, since that's the highest-risk path for this exact bug class to recur (fresh ANALYZE stats on every rebuild). `NTFY_TOPIC` still needs the founder to add one line to `.env` — that's the actual highest-leverage fix, and it's a credential, outside an agent's write scope by design.
+
+---
+
 ## 2026-08-19: Code Review Must Happen Before Production Deploy
 
 **Symptom:** Phase 3C small-org-clarity components deployed to daanaa.org (2026-08-19 19:08 UTC), then code review executed (triggered at 19:30). Review found 5 real defects: button-in-Link navigation bug, mission-text duplication, dead imports, redundant null checks. All required fixes + redeployment.
