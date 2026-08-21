@@ -66,6 +66,60 @@
         "value": "28px",
         "createdAt": "2026-08-14T19:35:15.000Z",
         "reason": "Phase 1 intentional — org page section subtitle"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#2563eb",
+        "createdAt": "2026-08-21T17:13:12.356Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot (Mission Infrastructure), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#4f46e5",
+        "createdAt": "2026-08-21T17:13:12.375Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot (Research & Academia), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#0a1628",
+        "createdAt": "2026-08-21T17:13:12.393Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot ('all' summary dot), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#0891b2",
+        "createdAt": "2026-08-21T17:13:12.411Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot (International Development), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#059669",
+        "createdAt": "2026-08-21T17:13:12.429Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot (Direct Service), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#b45309",
+        "createdAt": "2026-08-21T17:13:12.447Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot (Religion & Spiritual), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#e11d48",
+        "createdAt": "2026-08-21T17:13:12.465Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot (Membership & Advocacy), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#7c3aed",
+        "createdAt": "2026-08-21T17:13:12.483Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot (Foundations), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#ea580c",
+        "createdAt": "2026-08-21T17:13:12.500Z",
+        "reason": "User confirmed: GROUP_META categorical sector-legend dot (Asset Stewards), SectorHealth.tsx. Nominal taxonomy, single caller in codebase (grep-verified 2026-08-21) -- CEO+COO agree formalizing a DESIGN.md categorical ramp is premature abstraction (YAGNI, no 2nd caller)."
       }
     ]
   }
