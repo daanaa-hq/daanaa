@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-08-21: The overnight enrichment pipeline had been dead for over a week, discovered by accident
+
+**Symptom:** Asked "what else is open, can be improved" after a day of fixing individually-discovered broken paths. A mechanical, repo-wide grep for `python3 scripts/X.py` references (169 matches) filtered down to 24 in genuinely live code, of which 8 call-sites across 6 files were real, previously-undiscovered breaks. The worst: `scripts/ops/enrichment_loop_8pm_8am.sh` — the entire nightly 8pm-8am enrichment window — had been aborting at its first line every single night since the 2026-08-12 folder migration. Confirmed via that morning's own log: `can't open file '.../scripts/enrichment_preflight.py'` → `❌ PRE-FLIGHT CHECKS FAILED`. `scripts/enrichment/gpu_night.sh`'s AI mission generation was broken the same way.
+
+**Root cause:** Same class as everything else fixed today (the 2026-08-12 "folder structure reorganization" commit moved 203 files without updating every caller), but this is the instance that mattered most — a job that silently no-ops every night for a week, with no alert, because nothing was watching for "did enrichment actually run," only "did the cron entry fire."
+
+**Preventing rule:** A cron job firing on schedule and a cron job doing its job are different facts, and only the first one is cheap to verify. The watchdog work earlier today (`daanaa_watchdog.py`) checks production HTTP endpoints — it has no visibility into whether the *offline* pipelines (enrichment, mission generation, discovery) are actually producing output, only whether the *site* is up. A job silently failing every night for a week produces exactly the same crontab/journalctl signature as a job silently succeeding every night for a week — the only way to tell them apart is checking output, which nobody was doing until asked to look broadly. Worth adding: a lightweight "did any of the core nightly jobs actually write new rows/files in the last 24h" check, not just "is daanaa.org up."
+
+**How this was found:** Not by reading logs one at a time — by writing a small script to classify all 169 broken-path matches by whether the referencing file is (a) a comment/doc, (b) archived/dead code, or (c) called by something on the actual crontab — then manually checking only the ~24 in category (c). This took minutes and found more real damage than the whole day's worth of one-at-a-time discovery that preceded it. When auditing "is X broken across a large surface," build the mechanical filter first; don't rely on stumbling into each instance separately.
+
+---
+
 ## 2026-08-21: Weekly IRS data sync silently broken for 4 days — same folder-migration path drift, fourth occurrence today
 
 **Symptom:** Asked "any new data since we last checked" — checked `logs/cron.log` and found the weekly IRS refresh (Mondays 2am, new org registrations + revocation-guard + FTS delta) had failed every run since 2026-08-17: `python3: can't open file '/home/akbar/meritgiving/scripts/sync_irs_data.py': [Errno 2] No such file or directory`.
