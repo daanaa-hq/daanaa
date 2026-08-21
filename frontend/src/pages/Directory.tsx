@@ -153,6 +153,18 @@ export default function Directory() {
   const [randomizeCount, setRandomizeCount] = useState(0)  // Trigger refetch when randomize button clicked
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
+
+  // Phase 3B.4: Context filters (mission tags, service states, revenue band)
+  const [missionTags, setMissionTags] = useState<string[]>(
+    searchParams.get('mission')?.split(',').filter(Boolean) || []
+  )
+  const [serviceStates, setServiceStates] = useState<string[]>(
+    searchParams.get('service_state')?.split(',').filter(Boolean) || []
+  )
+  const [revenueBand, setRevenueBand] = useState<string | null>(
+    searchParams.get('revenue_band') || null
+  )
+
   const [currentPage, setCurrentPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   // Default view follows the viewport: the grid only reads as a grid once it
@@ -881,8 +893,27 @@ export default function Directory() {
             </div>
           )}
 
-          {/* OrgContextFilters — Phase 3B stub (returns null, prep for Phase 3B.4) */}
-          <OrgContextFilters />
+          {/* OrgContextFilters — Phase 3B.4: Discovery filters (mission, geography, financial) */}
+          <OrgContextFilters
+            missionTags={missionTags}
+            serviceStates={serviceStates}
+            revenueBand={revenueBand}
+            onMissionChange={(tags) => {
+              setMissionTags(tags)
+              setCurrentPage(1)
+              // TODO: Update URL params and apply filter to getOrganizations()
+            }}
+            onGeographyChange={(states) => {
+              setServiceStates(states)
+              setCurrentPage(1)
+              // TODO: Update URL params and apply filter to getOrganizations()
+            }}
+            onFinancialChange={(band) => {
+              setRevenueBand(band)
+              setCurrentPage(1)
+              // TODO: Update URL params and apply filter to getOrganizations()
+            }}
+          />
 
           {/* FilterSheet — mobile only */}
           <FilterSheet
