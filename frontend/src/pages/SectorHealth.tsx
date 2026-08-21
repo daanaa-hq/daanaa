@@ -38,16 +38,16 @@ const NTEE_GROUP: Record<string, GroupFilter> = {
   X: 'religion_spiritual', // Religion
 }
 
-const GROUP_META: Record<GroupFilter, { label: string; color: string; dot: string; bg: string; border: string; badge: string }> = {
-  all:                      { label: 'All sectors', color: 'text-deep-navy', dot: '#0A1628', bg: '', border: '', badge: 'bg-deep-navy/10 text-deep-navy' },
-  direct_service:           { label: 'Direct Service', color: 'text-emerald-700', dot: '#059669', bg: 'bg-emerald-50/40', border: 'border-l-4 border-l-emerald-400', badge: 'bg-emerald-100 text-emerald-700' },
-  mission_infrastructure:   { label: 'Mission Infrastructure', color: 'text-blue-700', dot: '#2563EB', bg: 'bg-blue-50/40', border: 'border-l-4 border-l-blue-400', badge: 'bg-blue-100 text-blue-700' },
-  research_academia:        { label: 'Research & Academia', color: 'text-indigo-700', dot: '#4F46E5', bg: 'bg-indigo-50/40', border: 'border-l-4 border-l-indigo-400', badge: 'bg-indigo-100 text-indigo-700' },
-  foundations:              { label: 'Foundations', color: 'text-purple-700', dot: '#7C3AED', bg: 'bg-purple-50/40', border: 'border-l-4 border-l-purple-400', badge: 'bg-purple-100 text-purple-700' },
-  membership_advocacy:      { label: 'Membership & Advocacy', color: 'text-rose-700', dot: '#E11D48', bg: 'bg-rose-50/40', border: 'border-l-4 border-l-rose-400', badge: 'bg-rose-100 text-rose-700' },
-  religion_spiritual:       { label: 'Religion & Spiritual', color: 'text-amber-700', dot: '#B45309', bg: 'bg-alert-amber/5/40', border: 'border-l-4 border-l-amber-400', badge: 'bg-amber-100 text-amber-700' },
-  international_development: { label: 'International Development', color: 'text-cyan-700', dot: '#0891B2', bg: 'bg-cyan-50/40', border: 'border-l-4 border-l-cyan-400', badge: 'bg-cyan-100 text-cyan-700' },
-  asset_stewards:           { label: 'Asset Stewards', color: 'text-orange-700', dot: '#EA580C', bg: 'bg-orange-50/40', border: 'border-l-4 border-l-orange-400', badge: 'bg-orange-100 text-orange-700' },
+const GROUP_META: Record<GroupFilter, { label: string; color: string; dot: string; bg: string; badge: string }> = {
+  all:                      { label: 'All sectors', color: 'text-deep-navy', dot: '#0A1628', bg: '', badge: 'bg-deep-navy/10 text-deep-navy' },
+  direct_service:           { label: 'Direct Service', color: 'text-emerald-700', dot: '#059669', bg: 'bg-emerald-50/40', badge: 'bg-emerald-100 text-emerald-700' },
+  mission_infrastructure:   { label: 'Mission Infrastructure', color: 'text-blue-700', dot: '#2563EB', bg: 'bg-blue-50/40', badge: 'bg-blue-100 text-blue-700' },
+  research_academia:        { label: 'Research & Academia', color: 'text-indigo-700', dot: '#4F46E5', bg: 'bg-indigo-50/40', badge: 'bg-indigo-100 text-indigo-700' },
+  foundations:              { label: 'Foundations', color: 'text-purple-700', dot: '#7C3AED', bg: 'bg-purple-50/40', badge: 'bg-purple-100 text-purple-700' },
+  membership_advocacy:      { label: 'Membership & Advocacy', color: 'text-rose-700', dot: '#E11D48', bg: 'bg-rose-50/40', badge: 'bg-rose-100 text-rose-700' },
+  religion_spiritual:       { label: 'Religion & Spiritual', color: 'text-amber-700', dot: '#B45309', bg: 'bg-amber-50/40', badge: 'bg-amber-100 text-amber-700' },
+  international_development: { label: 'International Development', color: 'text-cyan-700', dot: '#0891B2', bg: 'bg-cyan-50/40', badge: 'bg-cyan-100 text-cyan-700' },
+  asset_stewards:           { label: 'Asset Stewards', color: 'text-orange-700', dot: '#EA580C', bg: 'bg-orange-50/40', badge: 'bg-orange-100 text-orange-700' },
 }
 
 function formatMonths(v: number | null) {
@@ -280,7 +280,7 @@ export default function SectorHealth() {
                         title={`See ${sector.name} organizations`}
                         className={`group border-b border-light-grey/60 hover:bg-soft-gold/4 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold focus-visible:ring-inset transition-colors cursor-pointer ${groupMeta.bg}`}
                       >
-                        <td className={`py-4 pr-6 ${groupMeta.border}`}>
+                        <td className="py-4 pr-6">
                           <div className="flex items-center gap-3">
                             <div className="flex flex-col">
                               <div className="font-body text-body font-medium text-deep-navy group-hover:text-soft-gold transition-colors inline-flex items-center gap-1.5">
