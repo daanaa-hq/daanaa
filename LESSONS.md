@@ -737,6 +737,26 @@ And a v6 scoring-ledger prototype was mistaken for live source of truth for
 part of a session before its actual dead status was confirmed by checking
 for *scheduled* consumers, not just code references.
 
+**Correction, added 2026-08-22:** all five instances trace to the same
+single event, not five independent coincidences — the 2026-08-12 "Jake Van
+Clief domain-first" folder reorganization (`docs/FOLDER_STRUCTURE_PLAN.md`,
+DECISIONS.md 2026-08-12/08-16) that moved scripts into `scripts/core/`,
+`scripts/scoring/`, `scripts/ops/`, etc. That migration was executed with
+`git mv` for some files but a plain copy for others (confirmed:
+`scripts/core/droplet_api.py` sat as a real, independently-diverging 2,786-line
+snapshot for over a week, while its own README claimed it was a symlink —
+found and fixed 2026-08-16, well before this entry was first written), and
+updated some callers' paths but not others. This entry was written without
+that context and treated the five instances as an abstract recurring
+pattern rather than naming the one concrete event that caused nearly all
+of them. Re-audited 2026-08-22: the two path-drift compat symlinks checked
+(`scripts/droplet_api.py`, `scripts/cron_refresh_gt990.sh`) are both
+correctly in place now; no further stale duplicates found by a systematic
+same-basename search across `scripts/` — but this should not be trusted as
+exhaustive without re-checking, given how long the earlier issues went
+unnoticed. The general preventing rule below still holds; it's just no
+longer presented as five separate mysteries.
+
 **Root cause, the same shape every time:** a file gets moved into a
 subdirectory during a reorganization (`scripts/` → `scripts/scoring/`,
 `scripts/` → `scripts/ops/`, etc.), and every *caller* of that file — a
