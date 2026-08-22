@@ -1973,3 +1973,51 @@ this thread — real ripple effects beyond the 1,013 directly-affected orgs,
 needs its own approval. Phase F (the generalized LESSONS.md entry about
 "validation designed, never wired up" plus "a table that looks
 authoritative can be a dead prototype") not yet written.
+
+## 2026-08-21: Dry run found and fixed a real 3+ night production failure
+
+**Board deliberation** (via `institution/skills/board-deliberation.md`,
+run on request) recommended a real local dry run of `daanaa_scorer.py`
+before any droplet deploy, specifically to test Phase B's new trigger
+under real production scale — continuity/ops perspective dissented against
+deploying on manual single-row testing alone.
+
+**Running the dry run the way production actually invokes it (not the way
+I assumed) surfaced something bigger than what it was testing for**:
+`overnight_pipeline.py`'s `run_daanaa_scorer()` has been silently failing
+every night for at least 3 nights (confirmed via `logs/overnight.log` and
+rotated `.1`/`.2.gz` logs, first appearing 2026-08-19) — wrong script path
+(same reorg-drift class as several other fixes this session) *and* an
+entirely stale invocation contract (a `--output <json>` flag and a
+`scripts/load_daanaa_scores.py` loader, neither of which exist in the
+current scorer). Silently swallowed by the pipeline's own non-fatal error
+handling — same failure class as the daemon-health and cron-path bugs
+found earlier this session.
+
+**Fixed and verified**: corrected path + invocation (must run as
+`python3 -m scripts.scoring.daanaa_scorer`, module mode, not a bare script
+path, or the internal `scripts.scoring.peer_group` import fails). Verified
+by calling `run_daanaa_scorer()` directly, not just testing the subprocess
+command in isolation — 24 seconds, correct success log, confirmed
+`scoring_runs` row landed.
+
+**Practical effect of the underlying data having been stale**: re-running
+correctly raised numeric percentile coverage from ~27% to 77% (1,454,252 of
+1,888,766 orgs) on fresh data. The 27% figure cited earlier in this same
+session's DECISIONS.md entries was itself measured against stale data —
+worth knowing if referenced later.
+
+**The original dry-run purpose succeeded too**: Phase B's audit trail held
+up cleanly at real scale — one correct `scoring_runs` row (accurate
+`git_commit`, `row_counts_json`, timing), 495,485 real delta rows in
+`scoring_history`, all attributed to exactly one `run_id`, pointer table
+correctly cleared afterward. This satisfies the board's stated condition
+for deploying Phase A+B backend changes to the droplet.
+
+**Not yet done:** droplet deployment of Phases A+B (next step per the
+board's recommendation). Phase C (frontend) still awaits explicit deploy
+approval. Phase D (methodology.md) still awaits founder review. Phase F
+(generalized lesson entry) — this incident is now a fourth instance of the
+same "validation designed, never wired up" pattern (daemon health, cron
+paths, Phase B's own near-miss, and now this) and strengthens the case for
+writing it, still not done.
