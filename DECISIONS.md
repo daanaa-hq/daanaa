@@ -2063,3 +2063,54 @@ deploy approval — nothing frontend has shipped to the droplet today. Phase
 D (methodology.md) still awaits founder review. `droplet_api.py`'s broader
 167-line drift behind `daanaa_api.py` (unrelated IRS-eligibility
 refactoring) remains, deliberately not touched.
+
+## 2026-08-22: Disk space emergency resolved — 22GB free to 271GB free
+
+**Root cause chain, three separate real bugs, not one:** (1)
+`scripts/ops/s3_mirror_backups.py`'s invocation path was broken in
+`scripts/ops/daanaa_backup.sh` (same path-drift class as everything else
+this session, fixed and committed). (2) The actual retention gate for the
+big daily/hourly backups (`scripts/ops/backup_strategy.sh`'s
+`prune_local_backups()`) checks `aws s3 ls`, which has never worked — AWS
+CLI has no credentials configured at all (`NoCredentials` error), a
+separate, more fundamental issue than the path bug, not fixed today
+(credentials are the founder's to configure or decide on, not mine to
+touch). (3) Verified (Codex read-only analysis, not assumed) that Google
+Drive's real, working offsite copy (rclone, confirmed reachable, 102.5GB
+stored) does NOT actually cover the specific daily/hourly lineage
+`prune_local_backups()` manages — it's a separate backup lineage
+(`backups/full/`, weekly compressed) with no file-level overlap. The
+fail-safe was working exactly as designed, correctly refusing to prune
+data with no real offsite copy — this was not a bug to route around.
+
+**Founder decision (Option A of two presented):** prune now, accept that
+these specific historical local-only snapshots have no offsite twin,
+rather than building the offsite pipeline for this lineage first (Option
+B, safer but slower). Local-only snapshots are documented as "fast
+recovery, not history" — a separate, verified weekly full backup already
+exists via Google Drive for actual disaster recovery.
+
+**Executed as a manual, one-time action — not a permanent change to
+`prune_local_backups()`'s safety gate**, which stays intact for future
+automated runs in case the offsite gap for this lineage is fixed later.
+Removed:
+- 8 one-off manual backups in `data/backups/v6/` (~185GB) — all from the
+  abandoned 2026-07-26/27/28 ledger effort already fully reconciled
+  earlier today (dropped, backed up, verified dead — see the Phase A entry
+  above). Doubly safe: both the effort they protected against AND today's
+  actual successful replacement are independently confirmed.
+- 3 archived hourly backups in `backups/archive/` (~72GB), older than the
+  documented 3-hourly retention window once counted alongside
+  `backups/production/`'s hourlies.
+
+**Verified after, not assumed:** `df -h /` — 22GB free (98% used) before,
+271GB free (70% used) after. `backups/production/` now holds exactly the
+intended policy (6 daily, 3 hourly); `backups/archive/` and
+`data/backups/v6/` both empty, confirmed via direct `ls`.
+
+**Not done:** AWS credentials remain unconfigured (founder decision
+needed: configure them, or accept S3 as permanently best-effort/secondary
+per `daanaa_backup.sh`'s own design). Building a real offsite pipeline for
+the `backups/production/` daily/hourly lineage specifically (Option B)
+was not pursued, per the founder's Option A choice — this remains a real,
+if now less urgent, gap for that specific lineage going forward.
