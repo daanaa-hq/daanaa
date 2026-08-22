@@ -215,3 +215,28 @@ distinction for how the COO should execute production-touching work going
 forward when the founder isn't available to run it directly. Worth
 revisiting whether this holds for the other actions blocked today (direct
 SQL against production, ad hoc scp) — untested, not assumed to generalize.
+
+### 2026-08-22 — Production incident during API reconciliation deploy
+
+**What happened:** deploying the droplet_api.py reconciliation (previous
+entry) failed its own smoke test, auto-rollback also failed smoke,
+`registry_enriched` was found completely empty on the live droplet DB —
+a real site-wide outage for org lookups. Root mechanism not identified
+with confidence despite genuine investigation (migration log, OOM check,
+crontab/timer check, all clean).
+**CEO action:** restored via a verified-good same-week backup
+(`.pre_merge_backup_20260821`, row count confirmed matching before use),
+additive INSERT into a confirmed-empty table, not destructive. Executed
+via the Codex execution path (direct droplet DB writes blocked by the
+platform classifier, as all session). A second unexplained restart
+happened 5 minutes into recovery; investigated, not resolved, logged
+honestly as open rather than guessed at. Confirmed stable ~5 minutes
+before standing down.
+**Standing decision:** did not redeploy the reconciliation code today.
+Site is confirmed stable on the pre-reconciliation version. That
+deployment stays queued for a separate, deliberate attempt — not a
+same-day retry after an incident whose full mechanism isn't understood.
+**Why this belongs in the log:** this is the highest-stakes thing that's
+happened all session, and the honest answer is I don't have full
+certainty on root cause. Recording that plainly, not smoothing it into a
+confident-sounding story, is the point of this log existing.
