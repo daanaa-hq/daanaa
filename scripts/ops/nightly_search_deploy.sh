@@ -101,10 +101,33 @@ log "Integrity OK. registry_enriched rows: $ROW_COUNT"
 # /opt/daanaa/data/merit_registry.db is NOT a read-only precompute artifact --
 # it also holds live, user-generated tables (org_claims, waitlist,
 # wallet_analytics, feedback, donor_users, etc; confirmed via .tables on the
-# droplet). A full-file swap would destroy them. This does a targeted
-# DELETE+INSERT merge of ONLY the three tables this pipeline owns
-# (registry_enriched, org_fts, zip_codes), inside one transaction, leaving
-# every other table untouched.
+# droplet). A full-file swap would destroy them. This does a targeted merge
+# of ONLY the three tables this pipeline owns (registry_enriched, org_fts,
+# zip_codes), leaving every other table untouched.
+#
+# Rewritten 2026-08-22 after a real incident (DECISIONS.md same date):
+# registry_enriched used to get DELETE FROM + INSERT ... SELECT *. That
+# broke two ways at once. (1) search.db's registry_enriched is deliberately
+# lean (LIVE_COLS in scripts/search/build_search_db.py, ~50 columns) while
+# production has grown to 125 -- SELECT * across mismatched schemas either
+# errors outright (what actually happened) or, worse, silently succeeds
+# when column COUNTS happen to coincide while ORDER differs, corrupting
+# data with no error at all. (2) the sqlite3 CLI heredoc had no '.bail on',
+# so when the INSERT failed, the CLI printed the error to stderr and kept
+# going, reaching COMMIT anyway -- committing the DELETE with no re-insert.
+# registry_enriched sat empty for 6+ hours until found by accident.
+#
+# Fixed properly, not just patched: registry_enriched is now an explicit,
+# column-scoped UPSERT naming exactly the columns search.db owns (the same
+# LIVE_COLS list, kept in sync by hand -- if that list changes, update the
+# column names below to match). No DELETE at all for this table, so a
+# failed run can never leave it empty; existing rows keep every
+# production-only column (scoring_tier, confidence_v6, merit_percentile_v6,
+# all v6/eligibility fields) exactly as they were, since only the named
+# columns get overwritten. org_fts and zip_codes stay DELETE+INSERT --
+# they're wholly owned by this pipeline with no other production columns
+# to protect. '.bail on' is now the first line, so ANY statement failure
+# aborts before COMMIT instead of silently continuing past it.
 log "Step 4/6: Rsyncing search.db to droplet..."
 rsync --checksum --progress \
     -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new" \
@@ -113,10 +136,73 @@ rsync --checksum --progress \
 
 log "Merging into live serving DB (registry_enriched, org_fts, zip_codes only)..."
 $SSH "sqlite3 /opt/daanaa/data/merit_registry.db <<'MERGE_SQL'
+.bail on
 ATTACH DATABASE '/tmp/search_new_staging.db' AS src;
 BEGIN;
-DELETE FROM registry_enriched;
-INSERT INTO registry_enriched SELECT * FROM src.registry_enriched;
+INSERT INTO registry_enriched (
+    EIN, organization_name, NTEE1, NTEECC, CITY, STATE, zipcode,
+    mission, mission_source, merit_score, merit_tier, merit_band,
+    ntee1_percentile, peer_percentile, peer_rank, peer_total,
+    total_revenue, total_expenses, net_assets, months_of_reserve,
+    program_expense_pct, employee_count, latest_tax_year, ruling_date,
+    website, website_status, donate_url, donate_platform,
+    donate_url_status, volunteer_url, cause_tags, is_hidden_gem,
+    data_source, source, merit_archetype_v5, merit_archetype_v5_label,
+    merit_band_v5, merit_band_v5_label, merit_score_v5,
+    merit_health_signal_v5, merit_peer_group_v5, merit_peer_count_v5,
+    subsection, deductibility, org_status, irs_revoked,
+    irs_eligibility_status, irs_eligibility_checked_at,
+    irs_eligibility_sources, irs_eligibility_notes
+)
+SELECT
+    EIN, organization_name, NTEE1, NTEECC, CITY, STATE, zipcode,
+    mission, mission_source, merit_score, merit_tier, merit_band,
+    ntee1_percentile, peer_percentile, peer_rank, peer_total,
+    total_revenue, total_expenses, net_assets, months_of_reserve,
+    program_expense_pct, employee_count, latest_tax_year, ruling_date,
+    website, website_status, donate_url, donate_platform,
+    donate_url_status, volunteer_url, cause_tags, is_hidden_gem,
+    data_source, source, merit_archetype_v5, merit_archetype_v5_label,
+    merit_band_v5, merit_band_v5_label, merit_score_v5,
+    merit_health_signal_v5, merit_peer_group_v5, merit_peer_count_v5,
+    subsection, deductibility, org_status, irs_revoked,
+    irs_eligibility_status, irs_eligibility_checked_at,
+    irs_eligibility_sources, irs_eligibility_notes
+FROM src.registry_enriched
+WHERE true
+ON CONFLICT(EIN) DO UPDATE SET
+    organization_name=excluded.organization_name, NTEE1=excluded.NTEE1,
+    NTEECC=excluded.NTEECC, CITY=excluded.CITY, STATE=excluded.STATE,
+    zipcode=excluded.zipcode, mission=excluded.mission,
+    mission_source=excluded.mission_source, merit_score=excluded.merit_score,
+    merit_tier=excluded.merit_tier, merit_band=excluded.merit_band,
+    ntee1_percentile=excluded.ntee1_percentile,
+    peer_percentile=excluded.peer_percentile, peer_rank=excluded.peer_rank,
+    peer_total=excluded.peer_total, total_revenue=excluded.total_revenue,
+    total_expenses=excluded.total_expenses, net_assets=excluded.net_assets,
+    months_of_reserve=excluded.months_of_reserve,
+    program_expense_pct=excluded.program_expense_pct,
+    employee_count=excluded.employee_count,
+    latest_tax_year=excluded.latest_tax_year, ruling_date=excluded.ruling_date,
+    website=excluded.website, website_status=excluded.website_status,
+    donate_url=excluded.donate_url, donate_platform=excluded.donate_platform,
+    donate_url_status=excluded.donate_url_status,
+    volunteer_url=excluded.volunteer_url, cause_tags=excluded.cause_tags,
+    is_hidden_gem=excluded.is_hidden_gem, data_source=excluded.data_source,
+    source=excluded.source, merit_archetype_v5=excluded.merit_archetype_v5,
+    merit_archetype_v5_label=excluded.merit_archetype_v5_label,
+    merit_band_v5=excluded.merit_band_v5,
+    merit_band_v5_label=excluded.merit_band_v5_label,
+    merit_score_v5=excluded.merit_score_v5,
+    merit_health_signal_v5=excluded.merit_health_signal_v5,
+    merit_peer_group_v5=excluded.merit_peer_group_v5,
+    merit_peer_count_v5=excluded.merit_peer_count_v5,
+    subsection=excluded.subsection, deductibility=excluded.deductibility,
+    org_status=excluded.org_status, irs_revoked=excluded.irs_revoked,
+    irs_eligibility_status=excluded.irs_eligibility_status,
+    irs_eligibility_checked_at=excluded.irs_eligibility_checked_at,
+    irs_eligibility_sources=excluded.irs_eligibility_sources,
+    irs_eligibility_notes=excluded.irs_eligibility_notes;
 DELETE FROM org_fts;
 INSERT INTO org_fts SELECT * FROM src.org_fts;
 DELETE FROM zip_codes;
