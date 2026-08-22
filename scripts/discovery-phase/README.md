@@ -56,7 +56,7 @@ These scripts are part of the **Extended Discovery Phase** — enriching org dat
 |--------|---------|--------|----------|
 | `extract_990n_comprehensive.py` | Comprehensive e-postcard extraction with validation | Active | 2026-07-30 |
 
-### Volunteer Platform Consolidation (5 scripts in `volunteer-consolidation/`)
+### Volunteer Platform Consolidation (four scripts in `volunteer-consolidation/`, one at this directory root)
 
 | Script | Purpose | Status | Notes |
 |--------|---------|--------|-------|
@@ -102,7 +102,8 @@ python3 scripts/discovery-phase/extract_990n_websites.py --workers 8
 
 ### Batch Run (Orchestrated)
 
-See `scripts/overnight_pipeline.py` for production orchestration (runs 8pm-8am UTC).
+This experimental directory is not part of the production orchestrator. Any future
+integration with `scripts/core/overnight_pipeline.py` is planned, not yet built.
 
 ---
 
@@ -165,4 +166,5 @@ All scripts write to:
 ---
 
 **Last updated:** 2026-07-31 14:41 CDT  
-**Status:** Committed to git, tracked in ACTIVE_INITIATIVES.md
+**Status:** Committed to git; the former `ACTIVE_INITIATIVES.md` tracking reference
+was moved to `docs/ACTIVE_INITIATIVES.md`.

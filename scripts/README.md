@@ -44,21 +44,20 @@ scripts/
 │   ├── README.md               # Canonical: daanaa_scorer.py (v6)
 │   ├── daanaa_scorer.py        # Active scorer
 │   ├── compute_composite_score.py
-│   ├── archive/                # v4, v5 historical (do not use)
-│   └── tests/
+│   └── *(historical scorers live in ../archive/scorers/; do not use)*
 │
 ├── discovery/                   # Org enrichment
 │   ├── README.md               # Canonical: discovery_daemon.py, website_discovery_comprehensive.py
 │   ├── discovery_daemon.py     # Continuous daemon
 │   ├── website_discovery_comprehensive.py
 │   ├── charity_navigator_verify.py
-│   └── supplementary/
+│   └── *(supporting discovery utilities are kept in this directory)*
 │
 ├── enrichment/                  # Missions & embeddings
 │   ├── README.md               # Canonical per subdomain
 │   ├── missions/
 │   │   ├── generate_missions.py
-│   │   └── enrich_cause_tags_mission.py
+│   └── enrich_cause_tags_mission.py
 │   └── embeddings/
 │       ├── build_org_embeddings.py
 │       └── embedding_extraction.py
@@ -67,36 +66,23 @@ scripts/
 │   ├── README.md               # Canonical: sync_droplet_api.sh, safe_deploy_droplet.sh
 │   ├── sync_droplet_api.sh     # Auto-deploy + smoke test + auto-rollback
 │   ├── safe_deploy_droplet.sh  # Full deployment pipeline
-│   ├── monitoring/
-│   │   ├── api_watchdog.sh
-│   │   └── daemon_health_lib.py
-│   ├── backup/
-│   │   └── daanaa_backup.sh
-│   └── database/
-│       ├── schema_migrations.py
-│       └── database_reindex.sh
+│   ├── api_watchdog.sh
+│   ├── daemon_health_lib.py
+│   └── daanaa_backup.sh
 │
 ├── migrations/                  # Database schema versions
-│   ├── 001_initial_schema.sql
-│   ├── 002_add_v6_columns.sql
-│   └── run_migration.py
+│   └── *(inspect this directory for the applicable migration script)*
 │
 ├── admin/                       # Admin utilities
-│   ├── admin_key_validator.py
-│   └── privacy_audit.py
+│   └── admin_key_validator.py
 │
 ├── testing/                     # Test & validation scripts
-│   ├── search_quality_tests.py # 52 baseline tests (run before any search change)
-│   ├── smoke_tests.sh
-│   ├── performance_benchmarks.py
-│   └── integration_tests.py
+│   └── *(search-quality tests live in ../tests/)*
 │
 └── archive/                     # Dead code (do NOT use)
     ├── README.md               # "Everything here is archived"
-    ├── old_agents/             # agent1.py through agent13.py
-    ├── deprecated_scorers/     # Pre-v6 scoring
-    ├── experimental_apis/      # FastAPI variant, etc.
-    └── one_offs_2026_q1/       # Early experimentation
+    ├── legacy_agents/          # Historical agent implementations
+    └── scorers/                # Historical scoring implementations
 ```
 
 ---

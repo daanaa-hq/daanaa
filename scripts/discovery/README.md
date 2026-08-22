@@ -63,9 +63,9 @@ EOF
 
 ## Supporting Scripts
 
-- `check_link_health.py` — Verify donate URLs still valid (HTTP 200)
-- `supplementary/backfill_flame_websites.py` — Bulk backfill from external source
-- (Others in `historical/` are not maintained)
+- `../check_link_health.py` — Verify donation and website URLs are still valid
+- `../migrations/backfill_flame_websites.py` — Bulk website backfill from an external source
+- Other superseded discovery utilities are not canonical.
 
 ## Rate Limiting & Ethics
 
@@ -77,7 +77,7 @@ EOF
 
 ## Do Not Use
 
-- Old website scrapers (debris in historical/)
+- Superseded website scrapers that are not named above
 - `legacy_website_discovery_*.py` (superseded by comprehensive version)
 - Direct WHOIS queries without fallback (Charity Navigator API is canonical)
 
@@ -111,11 +111,11 @@ EOF
 → Add to manual backfill queue (talk to Akbar)
 
 **Donation link broken?**
-→ Run link health check: `python3 scripts/discovery/check_link_health.py`
+→ Run link health check: `python3 scripts/check_link_health.py`
 → Disable link if 404 (set donate_url = NULL, donate_confidence = 0)
 
 ## See Also
 
-- `docs/DISCOVERY_PIPELINE.md` — Detailed architecture
-- `docs/ENRICHMENT_PHASES.md` — What each phase does
+- `docs/projects/discovery/WEB_DISCOVERY_PIPELINE.md` — Website-discovery pipeline notes
+- `docs/ENRICHMENT_RUNBOOK.md` — Enrichment operating notes
 - DECISIONS.md 2026-07-18 — Crawler etiquette policy

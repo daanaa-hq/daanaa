@@ -4,7 +4,7 @@
 
 ### Missions
 - **`missions/generate_missions.py`** — AI mission generation (uses local Qwen3-30B via llama.cpp, port 11437)
-- **`missions/enrich_cause_tags_mission.py`** — Cause tag extraction + linking to missions
+- **`enrich_cause_tags_mission.py`** — Cause tag extraction + linking to missions
 
 ### Embeddings
 - **`embeddings/build_org_embeddings.py`** — Generate mxbai-embed vectors for semantic search (via llama.cpp, port 11436)
@@ -114,7 +114,6 @@ EOF
 
 ## See Also
 
-- `docs/ENRICHMENT_PIPELINE.md` — Full architecture
-- `docs/CAUSE_TAGS.md` — Cause tag ontology + examples
-- `scripts/missions/README.md` — Mission generation details
-- `scripts/embeddings/README.md` — Embedding generation details
+- `docs/ENRICHMENT_RUNBOOK.md` — Enrichment operating notes
+- `scripts/enrichment/build_ntee_cause_tags.py` — Cause-tag generation utility
+- This README’s Missions and Embeddings sections are the current local navigation; dedicated subdirectory READMEs are not yet built.

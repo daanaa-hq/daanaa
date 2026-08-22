@@ -17,7 +17,7 @@ python3 scripts/search/build_fts_index.py
 1. Add column to schema (or update existing column in `registry_enriched`)
 2. Update `_FTS5_FIELDS` in `build_fts_index.py`
 3. Rebuild index via `build_fts_index.py`
-4. Test via `tests/search_quality_tests.py` (52 test cases)
+4. Test via `tests/test_search_quality.py`
 
 **Tune search quality:**
 ```bash
@@ -73,5 +73,5 @@ print(f'Found {results[0]} orgs for \"food\"')
 
 ## See Also
 
-- `docs/SEARCH_QUALITY.md` — Detailed methodology
+- `docs/GATE3_SEARCH_QUALITY_AUDIT.md` — Search-quality audit record
 - `docs/FOLDER_STRUCTURE_PLAN.md` — Why this structure exists

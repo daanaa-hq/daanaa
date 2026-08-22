@@ -9,20 +9,15 @@
 
 ## Monitoring & Watchdogs
 
-```
-monitoring/
-├── api_watchdog.sh          — Restart daanaa-api if unhealthy
-├── daemon_health_lib.py     — Canonical health check (use this, not log parsing)
-└── healthcheck_droplet.sh   — Poll 5 endpoints from outside
-```
+`api_watchdog.sh` restarts `daanaa-api` if unhealthy, and
+`daemon_health_lib.py` is the canonical library for daemon health checks. For a
+manual public-site check, use `health_check.sh`.
 
 ## Database Operations
 
-```
-database/
-├── schema_migrations.py     — Run DB migrations safely
-└── database_reindex.sh      — Rebuild indexes (use sparingly)
-```
+There is no `scripts/ops/database/` directory. Review `scripts/migrations/`
+for the applicable migration script; do not apply database changes without the
+required approval and backup verification.
 
 ## Backup
 
@@ -60,9 +55,8 @@ database/
 
 **Check if droplet is healthy:**
 ```bash
-./scripts/ops/monitoring/healthcheck_droplet.sh
-# Polls: /, /api/stats, /api/search, /api/organizations, /health
-# Exits 0 if all 200, exits 1 if any fail
+./scripts/ops/health_check.sh
+# Checks the public homepage, directory, volunteer page, and /health endpoint.
 ```
 
 **Restart monitoring daemon:**
@@ -107,6 +101,6 @@ systemctl daemon-reload && systemctl restart daanaa-api
 
 ## See Also
 
-- `docs/DEPLOYMENT_RUNBOOK.md` — Step-by-step deployment procedures
+- `docs/operations/deployment/DEPLOYMENT.md` — Deployment procedures
 - `LESSONS.md` — Historical incidents + preventing rules
 - `institution/systemd/` — Service file templates

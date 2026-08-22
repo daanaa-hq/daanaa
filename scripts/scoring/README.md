@@ -2,8 +2,7 @@
 
 ## Canonical Files
 
-- **`daanaa_scorer.py`** — v6 tiered peer financial context (ACTIVE, runs nightly). Computes merit_score_v6, merit_tier, merit_band_v5_label, merit_health_signal_v5.
-- **`score_snapshots.py`** — Version tracking + historical snapshots (for rollback, auditing, A/B testing).
+- **`daanaa_scorer.py`** — v6 tiered peer financial context (active, runs nightly). Writes v6 tier, peer-group, confidence, and percentile fields.
 - **`compute_composite_score.py`** — Supporting utilities for peer group ranking.
 
 ## Scoring Versions (Historical Archive)
@@ -11,8 +10,8 @@
 | Version | Status | Location | Use Case |
 |---------|--------|----------|----------|
 | v6 | **ACTIVE** | `daanaa_scorer.py` | Tiered peer context (NTEE2 × revenue band × region) |
-| v5 | Archived | `archive/merit_scorer_v5_0.py` | Do not use (superseded) |
-| v4 | Archived | `archive/merit_scorer_v4_0.py` | Do not use (superseded) |
+| v5 | Archived | `../archive/scorers/v4_v5/merit_scorer_v5_0.py` | Do not use (superseded) |
+| v4 | Archived | `../archive/scorers/v4_v5/merit_scorer_v4_0.py` | Do not use (superseded) |
 
 ## How To...
 
@@ -27,7 +26,8 @@ python3 scripts/scoring/daanaa_scorer.py
 1. Edit `daanaa_scorer.py` (change peer groups, thresholds, etc.)
 2. Test locally with subset of data
 3. Run full score via nightly pipeline
-4. Verify via `scripts/testing/scoring_validation.py`
+4. Run the applicable focused validation before committing. A consolidated
+   `scripts/testing/scoring_validation.py` helper is planned, not yet built.
 5. Commit with DECISIONS.md entry explaining why
 
 **Rollback to previous scoring:**
@@ -41,23 +41,25 @@ SELECT * FROM score_snapshots ORDER BY created DESC LIMIT 5;
 
 **Input:** `registry_enriched` (org data: EIN, revenue, NTEE, region, etc.)
 **Output:** `registry_enriched` columns updated:
-- `merit_score_v6` — 0-100 financial health percentile
-- `merit_tier` / `merit_band_v5_label` — Peer group tier assignment
-- `merit_health_signal_v5` — HEALTHY / STABLE / NEED_SUPPORT
-- `merit_peer_count_v5` — Size of peer cell
+- `scoring_tier` / `tier_label` — v6 peer-context tier assignment
+- `peer_group_size` / `peer_group_description` — Size and description of the assigned peer group
+- `confidence` — Confidence based on peer-group coverage
+- `merit_percentile_v6` / `merit_percentile_confidence_v6` — v6 percentile and its confidence
+- `merit_peer_count_v6_scoreable` — Count of scoreable peers
 
 ## Testing
 
 ```bash
-# Validate scoring logic (checks peer group assignments, thresholds, etc.)
-python3 scripts/testing/scoring_validation.py
+# Focused legacy score validations (run the one matching the data under review)
+python3 scripts/testing/validate_v4_scores.py
+python3 scripts/testing/validate_v5_scores.py
 
 # Spot-check a few orgs
 python3 -c "
 import sqlite3
 conn = sqlite3.connect('data/merit_registry.db')
 orgs = conn.execute(
-    'SELECT EIN, org_name, merit_score_v6, merit_tier FROM registry_enriched WHERE merit_score_v6 > 0 LIMIT 5'
+    'SELECT EIN, org_name, merit_percentile_v6, scoring_tier FROM registry_enriched WHERE merit_percentile_v6 IS NOT NULL LIMIT 5'
 ).fetchall()
 for ein, name, score, tier in orgs:
     print(f'{ein} | {name[:40]:40} | {score:5.1f} | {tier}')
@@ -84,6 +86,6 @@ for ein, name, score, tier in orgs:
 
 ## See Also
 
-- `docs/METHODOLOGY.md` — v6 context system design
-- `docs/PEER_GROUPS.md` — NTEE2 × revenue band × region breakdown
+- `docs/METHODOLOGY_V6_INFERENCE.md` — v6 context methodology notes
+- `docs/research/DAANAA_V6_SCORING_RESEARCH_PAPER_v0.1.md` — v6 scoring research
 - `STEWARDSHIP.md` — Principles governing scoring
