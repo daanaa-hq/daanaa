@@ -4,7 +4,7 @@ At Daanaa, we help donors understand how financially stable a nonprofit is withi
 
 ## Our Scoring System (v6)
 
-Every nonprofit on Daanaa gets a financial health assessment based on **three dimensions:**
+Organizations that are tax-deductible 501(c)(3)s with a recorded category and state on file get a financial-context assessment based on **three dimensions.** (A small share of the registry — organizations without a deductibility status, category, or state on record — don't yet have enough structured data for this assessment at all; we still show what we know about them elsewhere on their page.)
 
 ### 1. **Funding Model** (Archetype)
 
@@ -18,61 +18,45 @@ We compare organizations only within their funding model. A food bank is never c
 
 ### 2. **Revenue Band** (Size)
 
-How much does the organization spend annually?
+How much does the organization report in annual revenue?
 
-- **Micro:** Less than $150,000/year (grassroots, volunteer-heavy)
-- **Professional:** $150,000–$700,000/year (established local presence)
-- **Established:** Over $700,000/year (regional or national reach)
+- **Grassroots:** Under $50,000/year
+- **Small:** $50,000–$200,000/year
+- **Mid:** $200,000–$500,000/year
+- **Established:** $500,000–$5,000,000/year
+- **Major:** $5,000,000/year or more
 
-Peer groups are size-adjusted. A $200K food bank is compared to other $150K–$700K nonprofits, not to $10M health systems.
+Peer groups are size-adjusted using these bands. A $150K food bank is compared to other Small-band nonprofits, not to a $10M health system.
 
-### 3. **Financial Context** (Tiered Peer Context)
+### 3. **Peer Comparison Tier**
 
-How does this organization's financial health compare to peers in the same funding model and revenue band?
+Rather than a single fixed formula, we try to compare each organization to the *most specific* peer group we can support with real data, and fall back to a broader comparison only when the specific one doesn't have enough similar organizations on file. This is a deterministic waterfall, not a guess: an organization lands in the tightest tier its own peer group actually supports.
 
-Our v6 system assigns one of four **tiers** based on financial stability within the peer group:
+- **Tier 1 (Full Context):** Same category, revenue band, and U.S. Census region. Needs a peer group of at least 25 organizations with usable data (including the organization itself).
+- **Tier 2 (National Context):** Same category and revenue band, nationwide (no regional match required). Needs a peer group of at least 20. *(Internally labeled "Regional Context" in some places — the comparison itself is national in scope; we're correcting that internal naming.)*
+- **Tier 3 (Broad Category):** Same category only, any size or region. Needs a peer group of at least 3.
+- **Tier 3b (Broad Category, alternate):** A wider category and the same revenue band, used when Tier 3's category match is too specific. Needs a peer group of at least 5.
+- **Tier 4 (Funding Model Only):** Same funding model and revenue band, across all categories — the broadest comparison we make. Needs a peer group of at least 3.
 
-- **Tier 1 (Full Context):** Strongest financial position within peer group; above 75th percentile
-- **Tier 2 (Regional Context):** Strong position; 50th–75th percentile  
-- **Tier 3 (Limited Context):** Moderate position; 25th–50th percentile
-- **Tier 4 (No Peer Data):** We can't compare this org—not enough similar organizations filed 990s
+Every organization that gets a financial-context assessment at all lands in one of these tiers, down to Tier 4 as the last resort — Tier 4 does not mean "no data," it means "the broadest comparison we could support." If even Tier 4's peer group is too small, the organization is shown with a tier label but no percentile number, described below.
 
-Each tier reflects **months of operating reserve** (liquid cash on hand) relative to peers:
-- **Tier 1–2:** Healthy reserves; 3–6 months typical for this type of org
-- **Tier 3:** Workable position; reserves exist but may need attention
-- **Tier 4:** We don't have the data to compare. Ask the org directly.
+### The percentile number
 
-## How Tiers Are Assigned
+Where the peer group is large enough, we also show a percentile: **how this organization's reported revenue compares to others in the same tier's peer group.** For example, "reports more revenue than 70% of similar organizations" means the organization's revenue is at or above 70% of that group's, based on the most recent 990 data we have for each.
 
-Each organization receives a **Tier** based on its position within its peer group:
+This percentile reflects **revenue standing within the peer group**, not reserve strength — those are two different things we track separately. Reserve strength (how many months an organization could operate on its unrestricted net assets, from its own 990 filing) is shown on its own, without being turned into a ranking.
 
-1. **Data Quality:** We require sufficient financial data (typically 2 years of 990 filings minimum)
-2. **Peer Matching:** We identify 20+ similar organizations in the same archetype and revenue band
-3. **Reserve Calculation:** We measure liquid reserves (cash + near-cash assets) as months of operating expense
-4. **Percentile Ranking:** We rank the organization against peers and assign a tier
+Not every organization with a tier has a percentile number — that requires the peer group to also have at least 3 organizations with both usable revenue and reserve figures, a stricter bar than the tier assignment alone. Where a number isn't available, we say so directly rather than showing one we can't back.
 
-**Tier Assignment Rules:**
-- **Tier 1:** Reserves at or above 75th percentile of peer group
-- **Tier 2:** Reserves at 50th–75th percentile
-- **Tier 3:** Reserves at 25th–50th percentile
-- **Tier 4:** Insufficient peer data (fewer than 20 comparable orgs with 990 filings)
-
-**Important:** Tier 4 doesn't mean "struggling." It means we can't compare. A $50K mutual aid network might be the only one in its county—that's not a failure, it's just reality. We show its funding model (what we do know) and recommend asking the org directly about finances.
-
-**Data Freshness Note:** Our scoring reflects the most recent 990 data available (typically 12–18 months old). Financial positions may have changed since filing. Last scoring update: **July 25, 2026**.
+**Data Freshness Note:** Our scoring reflects the most recent 990 data available (typically 12–18 months old, per standard IRS filing timelines). Financial positions may have changed since filing.
 
 ## What About Small Orgs & Data Gaps?
 
-Some organizations are Tier 4 not because they're struggling, but because they're rare.
+Some organizations land in Tier 4 — the broadest comparison we make — simply because they're too rare in their exact category or region to support a tighter one. A disability-led mutual aid network with no close 990 comparables anywhere, or a new nonprofit with one year of filing instead of two, are real examples of this, not signs of financial weakness.
 
-A $75K food pantry run by two people might be the only one in its ZIP code. A disability-led mutual aid network might have no 990 comparables. A new nonprofit might have one year of filing instead of two.
+A smaller number of organizations don't get a financial-context assessment at all: those without a recorded tax-deductibility status, category, or state on file. For these, we still show what public data we do have — mission, location, funding model where known — never a peer comparison we can't support.
 
-**We don't pretend we know what we don't.** Tier 4 means:
-- There aren't enough similar 990s to build a peer group
-- The org is real and has public data we can see
-- You should ask the organization about its finances (they know better than we do)
-
-We believe small organizations deserve the same honesty as large ones. "We don't know" is better than guessing.
+**We don't pretend we know what we don't.** We believe small organizations deserve the same honesty as large ones. "We don't know" is better than guessing.
 
 ## How We Gather Data
 
