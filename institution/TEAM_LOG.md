@@ -163,3 +163,29 @@ rewire, archive move, migration file). Phase A complete. Phase B (audit
 trail — Codex's pushback: single-row run log is necessary but not
 sufficient, needs an immutable per-org record too, not the abandoned
 mutable ledger) not started this session.
+
+### 2026-08-21 — CEO caught own design gap: Phase B duplicated an existing table
+
+**What happened:** designed and had Codex build `scoring_run_log` for
+Phase B's audit trail without first checking whether something already did
+that job. Something did — `scoring_runs`, 47 real v4/v5 rows, read live by
+both API files, already in CLAUDE.md's own schema table. Caught it myself
+by reading the git status after the first build and noticing an
+unfamiliar `scoring_runs` table sitting alongside my new one, not from any
+external flag.
+**Fix:** dropped `scoring_run_log` (empty, zero data lost), extended the
+real `scoring_runs` table instead (3 new nullable columns), worked around
+its pre-existing `completed_at NOT NULL` constraint by matching the
+established single-INSERT-at-completion convention from
+`load_v5_scores_delta.py` instead of the two-phase pattern the first draft
+used, and added a narrow `scoring_run_current` pointer table so the delta
+trigger can still attribute rows to the in-flight run despite the real
+`scoring_runs` row not existing until the run completes.
+**Verified independently**, not from Codex's report (which was itself cut
+short by a timeout mid-test): ran the trigger test myself — real change,
+no-op, and revert all behaved correctly; confirmed zero leftover state
+afterward.
+**Why this belongs in the log:** this is the exact class of mistake this
+whole plan exists to prevent (untracked parallel structures), made by the
+CEO this time, not inherited from a past session. Caught before it shipped,
+same standard applied to my own work as to anything reviewed from Codex.
