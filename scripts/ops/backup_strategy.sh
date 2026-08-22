@@ -241,12 +241,29 @@ prune_local_backups() {
     local keep_daily="${KEEP_DAILY_LOCAL:-7}" keep_hourly="${KEEP_HOURLY_LOCAL:-3}"
     log "🧹 retention: keeping ${keep_daily} daily / ${keep_hourly} hourly locally"
 
+    # Fixed 2026-08-22 (DECISIONS.md same date): this checked `aws s3 ls`,
+    # which has never worked -- AWS CLI has no credentials configured on
+    # this machine at all. Retention silently skipped every single run
+    # since this check was added, so backups/ grew unbounded (269GB found
+    # this date, was already back up from a same-day manual cleanup).
+    #
+    # This check was never meant to verify THIS tier's files specifically
+    # -- it's a general "is offsite infrastructure alive" sanity gate. The
+    # comment above (line ~234) already says durability for this data comes
+    # from separate jobs (the weekly full backup + core export, both pushed
+    # via rclone to Google Drive by scripts/ops/daanaa_backup.sh) -- local
+    # daily/hourly snapshots here are explicitly "fast recovery, not
+    # history." So the right fix is checking the offsite provider that's
+    # actually configured and working (verified live 2026-08-22: `rclone
+    # about daanaa-backup:` succeeds, 14.9TB free), not building new
+    # per-file upload infrastructure for a tier that was never supposed to
+    # need its own offsite copy.
     local offsite_ok=0
-    if aws s3 ls "s3://daanaa-backups/home-server/full/" >/dev/null 2>&1; then
+    if rclone about daanaa-backup: >/dev/null 2>&1; then
         offsite_ok=1
     fi
     if [ "$offsite_ok" != "1" ]; then
-        log "⚠️  retention SKIPPED — could not confirm an offsite copy exists"
+        log "⚠️  retention SKIPPED — could not confirm offsite infrastructure is reachable (rclone about daanaa-backup:)"
         return 0
     fi
 
