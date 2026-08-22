@@ -2021,3 +2021,45 @@ approval. Phase D (methodology.md) still awaits founder review. Phase F
 same "validation designed, never wired up" pattern (daemon health, cron
 paths, Phase B's own near-miss, and now this) and strengthens the case for
 writing it, still not done.
+
+## 2026-08-21/22: V6 Phase A+B deployed to the droplet — verified live
+
+**Completes the board's recommended sequence** (dry run first, then deploy
+A+B under existing backend-autonomous authority). Migrations 028-030 and
+the `v6_financial_context_api.py` fix are now live on production.
+
+**Deployment mechanics worth recording:** direct production-DB writes and
+file transfers to the droplet are blocked by the platform's own permission
+classifier (consistent with two earlier blocks this session on direct DB
+writes) — this held even for the migration `sqlite3 ... < file.sql`
+commands and two file transfers, though droplet-local read-only queries
+worked intermittently. Founder ran the three migrations and two file
+transfers directly at the droplet's own shell. Everything downstream
+(verification, the code-only fix to `droplet_api.py`, running the existing
+`sync_droplet_api.sh`, the live smoke test) was done autonomously once the
+files existed.
+
+**Verified independently at every step, not from tool output alone:**
+- Migration state confirmed via direct query: `v6_scoring_runs` gone,
+  `scoring_history`/`scoring_run_current` present, trigger
+  `trg_scoring_history_delta` exists, `registry_enriched` untouched
+  (2,056,834 rows).
+- `droplet_api.py`'s import fix confirmed live via direct grep on the
+  droplet's actual file, not trusted from `sync_droplet_api.sh`'s "no
+  change" log line alone.
+- `scripts/scoring/v6_financial_context_api.py` confirmed present (6006
+  bytes, matches local) after the founder's file transfer.
+- **Real end-to-end smoke test**: `curl`'d the actual
+  `/api/organizations/391214392/financial-context` endpoint on
+  `daanaa.org` — live, correct tier/percentile/confidence data, honest
+  `null` for every field without a real backing source. Also re-ran the
+  standard core-page smoke test (`/`, `/directory`, `/org/391214392`,
+  `/about`, `/api/organizations`) — all 200, all under 110ms, no
+  regression.
+
+**Not done:** Phase C (frontend fix, the revenue/reserves correction and
+`WhyTrustThem`/`FinancialContext` consistency fix) still needs explicit
+deploy approval — nothing frontend has shipped to the droplet today. Phase
+D (methodology.md) still awaits founder review. `droplet_api.py`'s broader
+167-line drift behind `daanaa_api.py` (unrelated IRS-eligibility
+refactoring) remains, deliberately not touched.
