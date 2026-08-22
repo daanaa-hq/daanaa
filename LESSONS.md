@@ -720,3 +720,54 @@ Not yet deployed to the droplet — precompute rebuild (interrupted by a separat
 > A `stop-old || true; ...; start-new` pattern with no verification in between (no `systemctl is-active`, no post-restart health check tied to *this* script's own exit code) can silently no-op both halves indefinitely if the unit name is ever wrong, and nothing will look broken from the deploy script's own output alone — Step 4 said "✓ Atomic swap complete" and meant it, while Step 5's actual failure was the only signal anything was wrong. When a script assumes a specific systemd unit name, that name is a fact worth a one-line verification (`systemctl list-units | grep <name>`) the first time the script is touched or re-verified, not just trusted from whenever it was originally written.
 
 **Fixed:** `API_SERVICE="daanaa"` → `"daanaa-api"` in `scripts/ops/deploy_droplet.sh` (both the repo copy and the droplet's live `/opt/daanaa/scripts/deploy_droplet.sh` — confirmed this file has no automatic sync path via `sync_droplet_api.sh`, so the local fix alone would not have reached the droplet). Verified by direct manual restart (`systemctl restart daanaa-api.service`) after the fact; new precompute data confirmed live via smoke test (homepage/health/org-detail all 200, `similar_organizations` populated on a real org).
+
+---
+
+## 2026-08-21/22: Consolidated lesson — path drift after a reorg is a recurring class, not isolated incidents
+
+**Symptom, five separate instances in one session:** `daanaa_api.py`'s
+`/financial-context` endpoint imported from a path that no longer existed.
+`overnight_pipeline.py`'s nightly scorer invocation had been silently
+failing every night for 3+ nights, referencing both a wrong path *and* an
+entirely stale CLI contract from an older scorer generation.
+`daanaa_backup.sh`'s S3 mirror step had been failing every night for 6+
+nights, same wrong-path pattern. `REPO_MAP.md` — the repo's own canonical
+navigation document — pointed at a deploy script path that doesn't exist.
+And a v6 scoring-ledger prototype was mistaken for live source of truth for
+part of a session before its actual dead status was confirmed by checking
+for *scheduled* consumers, not just code references.
+
+**Root cause, the same shape every time:** a file gets moved into a
+subdirectory during a reorganization (`scripts/` → `scripts/scoring/`,
+`scripts/` → `scripts/ops/`, etc.), and every *caller* of that file — a
+cron wrapper, a pipeline orchestrator, a navigation doc, a comment — keeps
+the old path. Nothing breaks loudly: Python's `ModuleNotFoundError` and a
+shell's `No such file or directory` both get caught by the exact kind of
+"log a warning, don't fail the whole run" error handling that's otherwise
+good practice (a transient scorer failure shouldn't take down the whole
+nightly pipeline) — but that same generosity is what let each of these run
+silently broken for days without anyone noticing, because nothing was ever
+actually checking whether the *intended* work happened, only whether the
+wrapper script itself exited 0.
+
+**Preventing rule:**
+
+> A caller that references another script by path is a fact that goes
+> stale the moment that script moves, and "log the error, don't fail the
+> pipeline" is exactly the design that lets it stay stale indefinitely —
+> the two together are a recurring, not incidental, failure class in this
+> repo. When touching any file that another script `subprocess.run()`s,
+> `import`s across a `scripts/` boundary, or references by path in a cron
+> line, grep the whole repo for that exact path before considering the
+> move done, not just update the file's own internal imports. And:
+> a database table that looks authoritative (real schema, real column
+> names, referenced by other code) is not evidence it's live — check for
+> a *scheduled* consumer (cron, the nightly orchestrator) before trusting
+> it as source of truth, the same way you'd check a script actually runs
+> before trusting its logged success.
+
+**Fixed:** all five instances found this session, individually, each with
+its own commit and DECISIONS.md entry (2026-08-21/22, V6 Phase A through
+the disk-space cleanup). This entry exists because the fifth instance made
+clear it was a pattern worth naming once, generally, rather than
+re-discovering by accident a sixth time.
