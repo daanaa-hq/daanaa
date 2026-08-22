@@ -30,7 +30,7 @@ const FAQS = [
   },
   {
     q: 'What happens when an organization\'s finances are missing?',
-    a: 'V6 may show financial patterns reported by a reasonable peer group: organizations comparable by category, geography, scale, and funding pattern. That is reference context, not an estimate of the organization\'s own finances. If the peer evidence is too weak, we show limited context instead.',
+    a: 'V6 may show financial patterns reported by a reasonable peer group — the tightest match the public record allows, which is usually by category and often also by geography and size. When even category doesn\'t have enough comparable organizations, the broadest comparison instead groups by funding model and size. That is reference context, not an estimate of the organization\'s own finances. If the peer evidence is too weak, we show limited context instead.',
   },
   {
     q: 'What were Lamp Tiers?',
@@ -151,7 +151,7 @@ export default function Methodology() {
                 <Link to="/about" className="text-soft-gold hover:text-bright-gold font-medium">How we approach this →</Link>
               </p>
               <Callout>
-                V6 is the public peer-context system on every organization page. It shows what public records tell us directly and, when direct data is missing, what similar organizations typically report. It is context for a giving decision, not a rating, endorsement, impact score, or recommendation.
+                V6 is the public peer-context system, shown on organization pages where the underlying IRS record supports it — legal tax-deductible status, a listed category, and a state on file. It shows what public records tell us directly and, when direct data is missing, what similar organizations typically report. It is context for a giving decision, not a rating, endorsement, impact score, or recommendation.
               </Callout>
             </Section>
 
@@ -183,13 +183,13 @@ export default function Methodology() {
                 V6 does not grade an organization or judge its work. It presents a small set of financial facts and peer patterns so donors can ask better questions. The result never claims to describe more than the public evidence supports.
               </p>
               <p>
-                We use two dimensions to find organizations that are truly comparable:
+                We try the tightest match the public record supports, and only widen it when there isn't enough data for that:
               </p>
               <div className="mt-2 space-y-3">
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
-                  <p className="font-body text-body font-semibold text-deep-navy">Funding model</p>
+                  <p className="font-body text-body font-semibold text-deep-navy">Category and region</p>
                   <p className="font-body text-body text-cool-grey mt-1">
-                    We use the available category, geography, revenue information, and funding pattern to build a comparable peer group. A food bank should not be compared with a hospital system simply because both are nonprofits. When a field is inferred, we label it.
+                    The closest comparison uses the organization's IRS category and region together. A food bank should not be compared with a hospital system simply because both are nonprofits. When a field is inferred, we label it.
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
@@ -198,9 +198,15 @@ export default function Methodology() {
                     Revenue is used when it is available to avoid comparing organizations of very different scale. We do not invent revenue when it is missing. In that case, V6 shows a broader or descriptive context and says what is not known.
                   </p>
                 </div>
+                <div className="p-4 bg-white rounded-lg border border-light-grey">
+                  <p className="font-body text-body font-semibold text-deep-navy">Funding model</p>
+                  <p className="font-body text-body text-cool-grey mt-1">
+                    When no category-based grouping finds enough comparable organizations, the broadest comparison instead groups by funding model — how an organization primarily funds its work (donations, program fees, or an endowment) — and revenue band, across all categories.
+                  </p>
+                </div>
               </div>
               <p className="mt-4">
-                Where public filings support it, V6 shows a reserve-related metric and the range reported by the peer group. The page identifies the source years, peer group, and uncertainty. A peer pattern is not a prediction of what an organization has or will do.
+                Where public filings support it, an organization page also shows how its reported revenue compares to the peer group's — for example, "reports more revenue than 70% of similar organizations." That's a comparison of revenue standing, not a reserve or overall-financial-health ranking; reserve strength (how many months an organization could operate on its own unrestricted net assets) is shown separately, on its own terms. The page identifies the source years, peer group, and uncertainty. A peer pattern is not a prediction of what an organization has or will do.
               </p>
 
               <div className="mt-6">
@@ -273,14 +279,15 @@ export default function Methodology() {
             </Section>
 
               <Section id="financial-context" label="Financial context" title="Financial context: how much peer comparison we can offer">
-                <p>Where the public record supports it, a page shows financial context: how an organization compares with peers doing similar work at a similar scale in a similar place. It is context, never a rating, and never our opinion of the organization or its work.</p>
+                <p>Where the public record supports it, a page shows financial context: how an organization compares with the closest peer group the data allows — as specific as similar work, similar scale, and a similar place, or broader when that close a match isn't possible. It is context, never a rating, and never our opinion of the organization or its work.</p>
                 <p className="mt-4">How closely we can match peers depends on what the public record contains, so we say which kind of comparison we were able to make:</p>
                 <div className="mt-4 space-y-3">
                   {[
                     { label: "Full context", what: "Compared with organizations of similar type, size, and region." },
                     { label: "Regional context", what: "The regional group was too small, so this compares organizations of similar type and size nationally instead." },
-                    { label: "Broad category", what: "Compared across a wider category when a closer peer group was too small to be meaningful." },
-                    { label: "Category only", what: "We can describe the kind of work, but the public record does not yet support a peer comparison." },
+                    { label: "Broad category", what: "The type-and-size group was too small, so this compares within the wider category alone, across all sizes and regions." },
+                    { label: "Broad category (alternate)", what: "Used when even that category is too narrow — compares within a wider category and the same size range instead." },
+                    { label: "Funding model only", what: "The broadest comparison we make: organizations classified with the same primary funding model (donations, program fees, or an endowment) and similar reported revenue, regardless of category. Often still supports a comparison; sometimes the public record only supports describing the kind of work." },
                   ].map(({ label, what }) => (
                     <div key={label} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">
                       <div className="shrink-0 pt-0.5 min-w-[7.5rem]">
