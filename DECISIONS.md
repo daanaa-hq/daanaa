@@ -2258,3 +2258,54 @@ why the *original* deploy's own smoke test failed even before any of this
 started — consistent with an already-known false-alarm pattern from
 2026-08-18 (see LESSONS.md), just not yet confirmed as the specific cause
 here.
+
+## 2026-08-22: Backup retention was structurally broken, not just once — fixed the mechanism, not the symptom
+
+**Type:** Improvement (root-cause fix), following the earlier same-day disk-space
+incident (the "prune now, accept the gap" entry above).
+
+**What made this worth a second pass:** checked disk state before starting
+new work and found `backups/` already back at 269GB — one normal night's
+cron cycle after that morning's manual cleanup had fully re-consumed the
+space. That's proof the earlier fix was a symptom treatment: the retention
+mechanism itself was never actually running.
+
+**Root cause:** `prune_local_backups()`'s offsite-verification gate checked
+`aws s3 ls`. AWS CLI has no credentials configured on this machine at all —
+confirmed via direct probe, not assumed. So `offsite_ok` was `0` on every
+single invocation since this gate was written, and retention returned early
+every time, unconditionally, forever. Not a recent regression — this has
+likely never worked.
+
+**Why the fix is structural, not a patch:** re-read the function's own
+comments before touching anything. They explicitly say durability for this
+tier comes from a *separate* job — `daanaa_backup.sh`'s weekly full backup
+and core export, both pushed via rclone to Google Drive — and that local
+daily/hourly snapshots here are "fast recovery, not history" by design. The
+`aws s3 ls` check was never meant to verify *this* data specifically; it was
+a general "is offsite infrastructure alive" sanity gate, just pointed at a
+provider that was never actually configured. Fixed by pointing it at the
+provider that is: `rclone about daanaa-backup:`, verified live (succeeds,
+14.9TB free) before committing to it.
+
+**Verified, not assumed:** confirmed the fixed check actually passes, then
+ran the real prune logic directly against the live backup directories
+(deliberately not by re-invoking the whole script, which runs a fresh
+backup creation unconditionally regardless of how it's called — found this
+the hard way mid-session, an extra redundant hourly backup got created by
+accident; harmless, left in place since it doesn't violate the retention
+count). Pruned 2 stale hourly backups past the keep-3 window. Disk: 232GB
+free before, 261GB free after.
+
+**Ongoing, not one-time:** this runs automatically every night at 02:00 via
+the existing cron entry — no manual action needed going forward. The real
+test is whether `backups/` stays bounded over the next several nights
+rather than climbing again; worth a quick check in a few days rather than
+assuming this is closed.
+
+**Deliberately not done:** did not touch AWS credentials (founder's call,
+noted in the earlier entry) — this fix doesn't need them, since Google
+Drive was already the documented primary offsite tier for the data that
+actually needs durable protection. Did not build new upload infrastructure
+for the local-only daily/hourly tier — its own design says it doesn't need
+one.
