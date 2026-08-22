@@ -77,9 +77,9 @@ scraper was built that duplicated `charity_navigator_verify.py`.)
 | Change | Command | ~time |
 |--------|---------|-------|
 | `droplet_api.py` only | `scripts/ops/sync_droplet_api.sh` | 1 min |
-| Frontend SPA only | `scripts/safe_deploy_droplet.sh --frontend-only` | 5 min |
-| API + frontend code | `scripts/safe_deploy_droplet.sh --code-only` | 5 min |
-| Data (scores/links) | `scripts/safe_deploy_droplet.sh` (full) | 2-4 h |
+| Frontend SPA only | `scripts/ops/safe_deploy_droplet.sh --frontend-only` | 5 min |
+| API + frontend code | `scripts/ops/safe_deploy_droplet.sh --code-only` | 5 min |
+| Data (scores/links) | `scripts/ops/safe_deploy_droplet.sh` (full) | 2-4 h |
 
 All paths smoke-test + auto-rollback. Never ship `merit_registry.db` to the droplet.
 
