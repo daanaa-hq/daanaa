@@ -20,10 +20,14 @@ Aligned with:
   • Stewardship Principle #3 (trust signals evidence-based + honest confidence)
 """
 
+import json
 import sqlite3
+import subprocess
 import sys
+import uuid
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 
 # Revenue band thresholds, Census region mapping, and get_revenue_band()/
 # get_region() moved 2026-08-16 to scripts/scoring/peer_group.py -- now the
@@ -39,6 +43,100 @@ from scripts.scoring.peer_group import (
 )
 
 DB_PATH = "data/merit_registry.db"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _utc_now():
+    """Return a UTC timestamp suitable for the audit trail."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _git_commit():
+    """Return the precise scorer revision without making git availability fatal."""
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            cwd=REPO_ROOT,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
+def _start_scoring_run(conn):
+    """Set the in-flight run pointer without making it a pipeline dependency."""
+    run_id = f"v6_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}_{uuid.uuid4().hex[:8]}"
+    started_at = _utc_now()
+    try:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO scoring_run_current (id, run_id, started_at)
+            VALUES (1, ?, ?)
+            """,
+            (run_id, started_at),
+        )
+        conn.commit()
+        return run_id, started_at
+    except sqlite3.Error as exc:
+        print(f"[v6.1] WARNING: could not set scoring run pointer: {exc}", file=sys.stderr)
+        return None, None
+
+
+def _record_scoring_run(conn, run_id, started_at, row_counts, input_ein_count, scorable_count, output_ein_count):
+    """Write one completed scoring_runs row without making it a pipeline dependency."""
+    if run_id is None:
+        return False
+
+    try:
+        source_data_date = conn.execute(
+            """
+            SELECT MAX(DATE(updated_at))
+            FROM registry_enriched
+            WHERE deductibility = '1' AND NTEECC IS NOT NULL AND STATE IS NOT NULL
+            """
+        ).fetchone()[0]
+        conn.execute(
+            """
+            INSERT INTO scoring_runs (
+                run_id, scorer_version, started_at, completed_at,
+                input_ein_count, scorable_count, output_ein_count,
+                notes, git_commit, row_counts_json, source_data_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                run_id,
+                "v6",
+                started_at,
+                _utc_now(),
+                input_ein_count,
+                scorable_count,
+                output_ein_count,
+                "Full v6 tiered peer financial context recomputation",
+                _git_commit(),
+                json.dumps(row_counts, sort_keys=True),
+                source_data_date,
+            ),
+        )
+        conn.commit()
+        return True
+    except sqlite3.Error as exc:
+        print(f"[v6.1] WARNING: could not record scoring run audit row: {exc}", file=sys.stderr)
+        return False
+
+
+def _clear_scoring_run_pointer(conn, run_id):
+    """Clear this run's pointer, including after an audit-write failure."""
+    if run_id is None:
+        return
+
+    try:
+        conn.execute(
+            "DELETE FROM scoring_run_current WHERE id = 1 AND run_id = ?",
+            (run_id,),
+        )
+        conn.commit()
+    except sqlite3.Error as exc:
+        print(f"[v6.1] WARNING: could not clear scoring run pointer: {exc}", file=sys.stderr)
 
 def compute_revenue_percentiles(orgs, updates):
     """Compute percentile rank (0-100) for each org within its peer group.
@@ -115,6 +213,7 @@ def main():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
+    scoring_run_id, scoring_run_started_at = _start_scoring_run(conn)
 
     print("[v6.0] Loading registry...")
     cursor.execute("""
@@ -378,6 +477,16 @@ def main():
         """, (scoring_tier, peer_desc, size, peer_desc, confidence, percentile, percentile_confidence, percentile_peer_count, ein))
 
     conn.commit()
+    _record_scoring_run(
+        conn,
+        scoring_run_id,
+        scoring_run_started_at,
+        tier_distribution,
+        len(orgs),
+        sum(1 for org in orgs if org["months_of_reserve"] is not None),
+        len(updates),
+    )
+    _clear_scoring_run_pointer(conn, scoring_run_id)
 
     print(f"\n[v6.1] TIER DISTRIBUTION")
     print(f"  Tier 1 (Full Context):      {tier_distribution['1_Full_Context']:>7,} orgs ({100.0 * tier_distribution['1_Full_Context'] / len(orgs):.1f}%)")
