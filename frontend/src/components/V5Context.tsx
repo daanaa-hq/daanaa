@@ -33,14 +33,21 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
   const style = SIGNAL_STYLE[v5.score.health_signal]
   const label = SIGNAL_LABEL[v5.score.health_signal]
 
-  // Only show the reserve-percentile line for healthy/stable orgs — for
+  // Only show the revenue-percentile line for healthy/stable orgs — for
   // CAUTION orgs the health badge is the signal; a percentile number creates
-  // a mixed message. Phrased as "stronger reserves than X% of peers", not
-  // "Top X%" — reserve months is what's actually measured, and "Top X%"
-  // reads as an overall-worth ranking to a plain reader even when the fine
-  // print scopes it to reserves. See DECISIONS.md 2026-08-21.
+  // a mixed message. Phrased as "larger revenue than X% of peers", not
+  // "Top X%" — revenue size within the peer group is what's actually
+  // measured (scripts/scoring/daanaa_scorer.py's compute_revenue_percentiles
+  // ranks total_revenue, not months_of_reserve; corrected 2026-08-21 after
+  // shipping "stronger reserves" here and in WhyTrustThem.tsx, which was
+  // factually wrong about what merit_percentile_v6 measures — caught by
+  // Codex fact-checking the methodology.md draft against the real scorer
+  // code, not caught before shipping). "Top X%" also reads as an
+  // overall-worth ranking to a plain reader regardless of scope. This
+  // component is not currently rendered anywhere (dead code) but kept
+  // accurate in case it's revived. See DECISIONS.md 2026-08-21.
   const showPercentile = v5.score.health_signal !== 'CAUTION'
-  const reservePercentile = Math.min(99, Math.max(1, Math.round(v5.score.percentile)))
+  const revenuePercentile = Math.min(99, Math.max(1, Math.round(v5.score.percentile)))
 
   const reserves = v5.benchmarks.reserves_months
   const hasOwnReserves = reserves.your_value !== null
@@ -81,7 +88,7 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
         {showPercentile ? (
           <>
             <span className={`font-display text-headline-lg font-bold leading-none ${style.text}`}>
-              Stronger reserves than {reservePercentile}%
+              Larger revenue than {revenuePercentile}%
             </span>
             <span className="font-body text-small text-cool-grey">of {v5.peer_group.label}</span>
           </>

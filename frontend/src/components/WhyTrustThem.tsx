@@ -137,13 +137,20 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
 
         {/* Peer financial context uses the live v6 scorer fields, matching the
             detailed FinancialContext card below. tier_label is the verified
-            description; do not use peer_group_description_v6 or counts here. */}
+            description; do not use peer_group_description_v6 or counts here.
+            merit_percentile_v6 ranks total_revenue within the peer group
+            (scripts/scoring/daanaa_scorer.py's compute_revenue_percentiles),
+            NOT months_of_reserve -- corrected 2026-08-21 after shipping
+            "stronger reserves" here, which was factually wrong about what
+            this number measures. Caught by Codex fact-checking a
+            methodology.md draft against the real scorer code, not caught
+            before the original copy shipped. See DECISIONS.md 2026-08-21. */}
         {hasPeerContext && (
           <div>
             <h3 className="font-body text-small font-semibold text-deep-navy mb-3 uppercase tracking-wide">How they compare</h3>
             <p className="font-body text-small text-cool-grey leading-relaxed">
               {(tier === '1_Full_Context' || tier === '2_Regional_Context') && org.merit_percentile_v6 != null && (
-                <>Stronger reserves than {Math.round(org.merit_percentile_v6)}% of {org.tier_label ?? 'similar organizations'}.</>
+                <>Reports more revenue than {Math.round(org.merit_percentile_v6)}% of {org.tier_label ?? 'similar organizations'}.</>
               )}
               {(tier === '1_Full_Context' || tier === '2_Regional_Context') && org.merit_percentile_v6 == null && (
                 <>A peer context is available, but a numeric reserve comparison is not available yet{org.tier_label ? `: ${org.tier_label}.` : '.'}</>
