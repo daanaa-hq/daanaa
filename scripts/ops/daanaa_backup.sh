@@ -144,7 +144,7 @@ echo "$TIMESTAMP INFO offsite push verified ($OFFSITE_FILES files on Google Driv
 # A transient S3/AWS issue here is logged loudly but does not fail the whole
 # nightly backup — the primary backup already succeeded.
 echo "$TIMESTAMP INFO mirroring backups to S3 (secondary offsite)..."
-if ! "$HOME/meritgiving/venv/bin/python3" "$HOME/meritgiving/scripts/s3_mirror_backups.py" 2>&1 | tee -a "$ERRORLOG"; then
+if ! "$HOME/meritgiving/venv/bin/python3" "$HOME/meritgiving/scripts/ops/s3_mirror_backups.py" 2>&1 | tee -a "$ERRORLOG"; then
   echo "$TIMESTAMP WARNING S3 mirror failed — Google Drive offsite copy is still intact" | tee -a "$ERRORLOG"
 fi
 
