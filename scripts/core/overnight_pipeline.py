@@ -425,46 +425,52 @@ def apply_nonprofit_updates():
 
 
 def run_daanaa_scorer():
-    """Run daanaa_scorer (v6) to keep Daanaa financial context scores fresh. Logs but doesn't fail pipeline if scorer errors."""
+    """Run daanaa_scorer (v6) to keep Daanaa financial context scores fresh. Logs but doesn't fail pipeline if scorer errors.
+
+    Fixed 2026-08-21/22 (DECISIONS.md same dates): this had been silently
+    failing every night for at least 3 nights (logs/overnight.log +
+    rotated .1/.2.gz). Two real bugs, not one -- wrong path
+    (scripts/daanaa_scorer.py; real file is scripts/scoring/daanaa_scorer.py,
+    moved during a reorg that never updated this caller), and a completely
+    stale invocation contract: this called the scorer with --output <json>
+    then a separate scripts/load_daanaa_scores.py loader -- neither exists
+    in the current scorer, which takes zero CLI args and writes directly to
+    registry_enriched via sqlite3. Also must run as a module
+    (python3 -m scripts.scoring.daanaa_scorer), not a bare script path --
+    scripts.scoring.peer_group's import only resolves that way. Verified by
+    running it exactly this way locally: 1,888,766 orgs scored in 24s,
+    495,485 real tier/percentile changes correctly captured in the new
+    scoring_history audit trail (migrations/030), one scoring_runs row with
+    accurate git_commit/row_counts_json/timing.
+    """
     try:
         import subprocess
         log('Running daanaa_scorer (v6 financial context)...')
-        scorer_script = Path.home() / 'meritgiving' / 'scripts' / 'daanaa_scorer.py'
-        scores_file = Path.home() / 'meritgiving' / f'scores_daanaa_{datetime.now().strftime("%Y%m%d")}.json'
 
         result = subprocess.run(
-            ['python3', str(scorer_script), '--output', str(scores_file)],
+            ['python3', '-m', 'scripts.scoring.daanaa_scorer'],
+            cwd=str(Path.home() / 'meritgiving'),
             capture_output=True, text=True, timeout=14400,  # 4 hour timeout
         )
 
-        if result.returncode == 0 and scores_file.exists():
-            log(f'✅ Scorer completed: {scores_file}')
-            # Load scores into DB
-            load_script = Path.home() / 'meritgiving' / 'scripts' / 'load_daanaa_scores.py'
-            load_result = subprocess.run(
-                ['python3', str(load_script), str(scores_file)],
-                capture_output=True, text=True, timeout=600,
-            )
-            if load_result.returncode == 0:
-                log('✅ Daanaa scores loaded into registry_enriched')
-                # Mark all pending_scoring updates as included_in_run
-                try:
-                    conn = get_db()
-                    c = conn.cursor()
-                    c.execute('''
-                        UPDATE org_nonprofit_updates
-                        SET status = 'included_in_run', included_in_run_at = CURRENT_TIMESTAMP
-                        WHERE status = 'pending_scoring'
-                    ''')
-                    conn.commit()
-                    affected = c.rowcount
-                    conn.close()
-                    if affected > 0:
-                        log(f'✅ Marked {affected} nonprofit updates as included_in_run')
-                except Exception as e:
-                    log(f'⚠️  Error marking updates as included: {str(e)[:100]}')
-            else:
-                log(f'⚠️  Scorer loaded but score import failed: {load_result.stderr[:200]}')
+        if result.returncode == 0:
+            log('✅ Daanaa scorer completed, registry_enriched updated directly')
+            # Mark all pending_scoring updates as included_in_run
+            try:
+                conn = get_db()
+                c = conn.cursor()
+                c.execute('''
+                    UPDATE org_nonprofit_updates
+                    SET status = 'included_in_run', included_in_run_at = CURRENT_TIMESTAMP
+                    WHERE status = 'pending_scoring'
+                ''')
+                conn.commit()
+                affected = c.rowcount
+                conn.close()
+                if affected > 0:
+                    log(f'✅ Marked {affected} nonprofit updates as included_in_run')
+            except Exception as e:
+                log(f'⚠️  Error marking updates as included: {str(e)[:100]}')
         else:
             log(f'⚠️  Scorer error (non-fatal, pipeline continues): {result.stderr[:200]}')
     except Exception as e:
