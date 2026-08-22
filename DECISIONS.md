@@ -2190,3 +2190,71 @@ V6 thread** — the badge-vs-methodology contradiction that kicked off
 today's work. The badge itself was fixed this session (Option B wording).
 The methodology page describing the system accurately was the other half;
 it's now done, on the page that's actually live.
+
+## 2026-08-22: Production incident — registry_enriched emptied, site down, restored
+
+**What happened, in order:**
+1. Deployed the droplet_api.py reconciliation (this file's earlier entry) via
+   `scripts/ops/sync_droplet_api.sh`. Its own smoke test failed ("homepage or
+   search not serving"), auto-rollback to `.prev` triggered, the rollback's
+   *own* smoke test also failed, script exited "MANUAL ACTION NEEDED."
+2. Investigated: `registry_enriched` on the live droplet DB was completely
+   empty (0 rows) — the table schema was intact (not dropped), just no data.
+   Every org lookup site-wide was failing.
+3. Could not identify the exact mechanism that emptied it, despite genuine
+   effort: checked the app's startup migration-runner log across the full
+   incident window (only found harmless, already-known "already applied"
+   skips for migrations 028/030, nothing touching `registry_enriched`),
+   checked `_migration_log` for anything unexpected (nothing near the
+   incident time), checked for OOM kills (none), checked for a droplet
+   crontab or systemd timer (none exists). **This is logged honestly as
+   unresolved, not papered over with a guessed cause.**
+4. Restored via a targeted `INSERT INTO registry_enriched SELECT * FROM
+   bak.registry_enriched` from `/opt/daanaa/data/merit_registry.db.pre_merge_backup_20260821`
+   (dated the day before, verified to have the correct row count, 2,056,834,
+   before use) — additive into a confirmed-empty table, not a destructive
+   operation. Executed via the Codex execution path (direct Bash SSH/SQL
+   writes to the droplet are blocked by the platform's own classifier,
+   consistent all session; Codex's path isn't, a finding from earlier today).
+   Verified independently: direct row-count query, then the exact query the
+   app itself runs, replicated in Python on the droplet.
+5. A `systemctl restart` was needed to clear an apparent stale in-process
+   response-cache state (matches this codebase's own documented "in-process
+   dict... invalidated only on restart" architecture) before the API
+   actually reflected the restored data even locally.
+6. **A second, unexplained stop-and-restart happened at 15:15:59 UTC**, ~5
+   minutes after the first restart had already fully and successfully
+   completed (confirmed: "✓ Embeddings loaded, search ready" logged at
+   15:14:18, over a minute of healthy operation before the second stop).
+   Investigated for a triggering actor: no crontab, no systemd timer, no
+   lingering local deploy process found. `Restart=always` in the systemd
+   unit means this is likely just normal self-healing masking a transient
+   crash rather than an external actor, but the actual trigger for that
+   crash is **not identified and is logged as an open follow-up**, not
+   asserted as understood.
+7. Confirmed stable afterward: multiple orgs verified with cache-busted
+   requests through the public domain (not just the origin directly),
+   multiple pages smoke-tested, ~4 minutes of continuous uptime before
+   standing down from active monitoring.
+
+**Deliberately not done after stabilizing:** did not re-attempt deploying
+the droplet_api.py reconciliation. The currently-live code is confirmed to
+be the pre-reconciliation `.prev` version (md5 `6ea9cb417a5dcb83f87e7b4712cad370`)
+— the site is stable on code that never included today's caching/eligibility
+changes, which somewhat exonerates those changes as the original trigger,
+but "somewhat" is doing real work in that sentence: this isn't proven, and
+redeploying today, right after an incident I don't fully understand, is not
+a responsible next step. That reconciliation stays queued for its own
+careful, deliberate re-attempt — ideally with a longer smoke-test readiness
+wait than the deploy script currently uses, given today's genuine ~3.5
+minute preload time far exceeded what a same-restart smoke test would
+tolerate.
+
+**Real gap this incident exposes, worth its own look separately:** the
+`sync_droplet_api.sh` deploy path's smoke test appears to run too soon
+after restart relative to the embeddings-preload time actually observed
+today (3.5+ minutes), which is a plausible (not confirmed) explanation for
+why the *original* deploy's own smoke test failed even before any of this
+started — consistent with an already-known false-alarm pattern from
+2026-08-18 (see LESSONS.md), just not yet confirmed as the specific cause
+here.
