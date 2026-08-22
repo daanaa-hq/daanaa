@@ -14,8 +14,14 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
     org.leadership_info.board_size || org.leadership_info.employee_count
   )
   const hasVerification = org.latest_tax_year !== null
+  const tier = org.scoring_tier
+  const hasPeerContext = tier === '1_Full_Context' ||
+    tier === '2_Regional_Context' ||
+    tier === '3_Broad_Category' ||
+    tier === '3b_Broad_Category' ||
+    tier === '4_Archetype_Only'
 
-  if (!hasFinancials && !hasGovernance && !hasVerification) {
+  if (!hasFinancials && !hasGovernance && !hasVerification && !hasPeerContext) {
     return null
   }
 
@@ -129,32 +135,25 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
           </div>
         )}
 
-        {/* Peer Group Comparison */}
-        {org.peer_total && org.peer_total > 0 && org.peer_percentile !== null && (
+        {/* Peer financial context uses the live v6 scorer fields, matching the
+            detailed FinancialContext card below. tier_label is the verified
+            description; do not use peer_group_description_v6 or counts here. */}
+        {hasPeerContext && (
           <div>
             <h3 className="font-body text-small font-semibold text-deep-navy mb-3 uppercase tracking-wide">How they compare</h3>
-            <div className="space-y-2 mb-3">
-              <div className="flex justify-between items-baseline">
-                <span className="font-body text-base text-cool-grey">Reserve position</span>
-                <span className="font-body text-base font-medium text-deep-navy">
-                  Stronger than {Math.round(org.peer_percentile)}% of similar organizations
-                </span>
-              </div>
-              {org.peer_group && (
-                <div className="flex justify-between items-baseline">
-                  <span className="font-body text-base text-cool-grey">Peer group size</span>
-                  <span className="font-body text-base font-medium text-deep-navy">{formatNumber(org.peer_total)} similar organizations</span>
-                </div>
-              )}
-              {org.revenue_band && (
-                <div className="flex justify-between items-baseline">
-                  <span className="font-body text-base text-cool-grey">Size category</span>
-                  <span className="font-body text-base font-medium text-deep-navy">{org.revenue_band}</span>
-                </div>
-              )}
-            </div>
             <p className="font-body text-small text-cool-grey leading-relaxed">
-              This organization's reserve position is stronger than {Math.round(org.peer_percentile)}% of {org.peer_total} similar organizations in their sector and size range.
+              {(tier === '1_Full_Context' || tier === '2_Regional_Context') && org.merit_percentile_v6 != null && (
+                <>Stronger reserves than {Math.round(org.merit_percentile_v6)}% of {org.tier_label ?? 'similar organizations'}.</>
+              )}
+              {(tier === '1_Full_Context' || tier === '2_Regional_Context') && org.merit_percentile_v6 == null && (
+                <>A peer context is available, but a numeric reserve comparison is not available yet{org.tier_label ? `: ${org.tier_label}.` : '.'}</>
+              )}
+              {(tier === '3_Broad_Category' || tier === '3b_Broad_Category') && (
+                <>Compared within a broader category{org.tier_label ? `: ${org.tier_label}.` : '.'}</>
+              )}
+              {tier === '4_Archetype_Only' && (
+                <>Not enough detailed financial data for a numeric comparison yet — that's not a reflection on their quality.</>
+              )}
             </p>
           </div>
         )}

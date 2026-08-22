@@ -77,6 +77,8 @@ export interface ApiOrganization {
   scoring_tier?: string | null;      // '1_Full_Context' | '2_Regional_Context' | '3_Broad_Category' | '4_Archetype_Only'
   tier_label?: string | null;        // e.g. "Donation-Funded Programs, Established, national" -- the verified-correct peer-group description; see FinancialContext.tsx for why peer_group_size/peer_group_description below are not used for display
   confidence?: string | null;        // 'high' | 'good' | 'moderate' | 'archetype_only'
+  merit_percentile_v6?: number | null;
+  merit_peer_count_v6_scoreable?: number | null;
   peer_group_size?: number | null;   // NOT reliably populated on the droplet -- see FinancialContext.tsx comment, 2026-08-08
   peer_group_description?: string | null; // NOT reliably populated on the droplet -- see FinancialContext.tsx comment, 2026-08-08
   // v6.0 Peer inference system (new)
@@ -980,4 +982,3 @@ export async function getPortalToken(ein: string, idToken: string): Promise<stri
 // CPI index level was mislabeled as inflation %, and the "knowledge graph"
 // entities were raw NTEE code letters. Backend tables + /recall endpoint
 // still exist with no consumer; see memory finding-macro-context-card-crash.
-
