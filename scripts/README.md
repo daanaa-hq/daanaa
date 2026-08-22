@@ -122,17 +122,23 @@ scripts/
 
 ## Backward Compatibility (Symlinks)
 
-These symlinks exist for backward compatibility with old import paths:
+**Corrected 2026-08-22** (verified via `ls -la`, not assumed — a false symlink
+claim here caused a real incident once already, DECISIONS.md 2026-08-16):
 
 ```
-scripts/droplet_api.py          → scripts/core/droplet_api.py
-scripts/overnight_pipeline.py   → scripts/core/overnight_pipeline.py
+scripts/droplet_api.py          → ../droplet_api.py       (real symlink, confirmed)
+scripts/core/droplet_api.py     → ../../droplet_api.py    (real symlink, confirmed)
+scripts/overnight_pipeline.py   does NOT exist -- no compat symlink was ever
+                                 created for this one. The only real file is
+                                 scripts/core/overnight_pipeline.py.
 ```
 
-**Old imports still work:**
+**Old imports:**
 ```python
 from scripts.droplet_api import app          # ✅ Works via symlink
-from scripts.core.droplet_api import app     # ✅ Also works (actual location)
+from scripts.core.droplet_api import app     # ✅ Also works (actual file, via symlink)
+from scripts.overnight_pipeline import main  # ❌ Does NOT work -- no symlink exists
+from scripts.core.overnight_pipeline import main  # ✅ Works (actual location)
 ```
 
 Both import paths work. **Prefer the new path** (`scripts.core.*`) in new code.

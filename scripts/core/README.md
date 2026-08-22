@@ -28,10 +28,18 @@ python3 scripts/droplet_api.py              # Same thing
 
 ## Do Not Use
 
-- `daanaa_api.py` (local variant with home-only schema, archived 2026-07-15)
 - `merit_api.py` (removed 2026-05-20)
+
+**Corrected 2026-08-22:** the line above previously also listed `daanaa_api.py`
+as "archived 2026-07-15" — that's wrong. `daanaa_api.py` (repo root) is the
+live local-dev copy of the API, actively edited alongside `droplet_api.py`.
+See CLAUDE.md's "Which backend is canonical" section.
 
 ## History
 
 - Moved to `scripts/core/` 2026-08-12 (folder structure refactoring, Jake Van Clief model)
-- Old paths `scripts/droplet_api.py` and `scripts/overnight_pipeline.py` are symlinks for backward compat
+- **Corrected 2026-08-22** (verified via `ls -la`, not assumed): `scripts/droplet_api.py`
+  is a real symlink (→ `../droplet_api.py`). `scripts/overnight_pipeline.py`
+  is NOT a symlink — that compat path was never created. The only real file
+  is `scripts/core/overnight_pipeline.py`; the crontab correctly references
+  that full path directly, not the bare compat path.
