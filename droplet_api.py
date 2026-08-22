@@ -81,9 +81,55 @@ except Exception as e:
     _irs_eligibility_available = False
     print(f"[Startup] ⚠ IRS eligibility helper not available: {e}", file=sys.stderr)
 
+# Shared explanation copy, keyed by status. Module-level so both the
+# single-EIN and bulk paths below use identical wording.
+_IRS_ELIGIBILITY_EXPLANATIONS = {
+    "verified": "IRS Publication 78 and BMF confirm tax-deductible status.",
+    "eligible": "IRS records indicate likely eligibility. Verify before giving.",
+    "unverified": "Limited IRS evidence available. Confirm with IRS before giving.",
+    "revoked": "IRS records show revocation. Confirm current status before giving.",
+    "unknown": "IRS status not yet verified.",
+    "eligible_pending_verification": "Likely eligible per BMF. Full verification pending."
+}
+
+
+def _eligibility_dict_from_fields(status, checked_at, sources_json) -> dict:
+    """Build the standard eligibility response dict from already-fetched raw
+    columns -- no DB connection. Shared by _get_irs_fields_from_db (single
+    EIN lookup, opens its own connection) and list_organizations' bulk path,
+    which selects these columns inline in its main query instead of paying
+    for a fresh sqlite3.connect() per row (2026-08-18 perf fix; see
+    DECISIONS.md same date)."""
+    try:
+        sources = json.loads(sources_json) if sources_json else []
+    except (json.JSONDecodeError, TypeError):
+        sources = []
+    status = status or "unknown"
+    return {
+        "irs_eligibility_status": status,
+        "irs_eligibility_checked_at": checked_at,
+        "irs_eligibility_sources": sources,
+        "irs_eligibility_explanation": _IRS_ELIGIBILITY_EXPLANATIONS.get(
+            status, "Check IRS for current status."),
+    }
+
+
+_IRS_ELIGIBILITY_UNKNOWN = {
+    "irs_eligibility_status": "unknown",
+    "irs_eligibility_checked_at": None,
+    "irs_eligibility_sources": [],
+    "irs_eligibility_explanation": "IRS status unavailable"
+}
+
+
 # Override: Read IRS fields from database columns (Phase 1-4 launch)
 def _get_irs_fields_from_db(ein: str) -> dict:
-    """Read IRS eligibility from database columns (faster, for Phase 1-4)."""
+    """Read IRS eligibility from database columns (faster, for Phase 1-4).
+
+    Single-EIN lookup path (get_organization and similar) -- opens its own
+    short-lived connection, which is fine at one call per request. The bulk
+    directory listing does NOT use this function; see list_organizations.
+    """
     try:
         # Get DB_PATH from environment or use default (will be set later)
         db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
@@ -91,7 +137,7 @@ def _get_irs_fields_from_db(ein: str) -> dict:
         cur = conn.cursor()
         cur.execute("""
             SELECT irs_eligibility_status, irs_eligibility_checked_at,
-                   irs_eligibility_sources, irs_eligibility_notes
+                   irs_eligibility_sources
             FROM registry_enriched
             WHERE ein = ?
         """, (ein,))
@@ -99,36 +145,11 @@ def _get_irs_fields_from_db(ein: str) -> dict:
         conn.close()
 
         if row:
-            status, checked_at, sources_json, notes = row
-            try:
-                sources = json.loads(sources_json) if sources_json else []
-            except:
-                sources = []
-
-            explanations = {
-                "verified": "IRS Publication 78 and BMF confirm tax-deductible status.",
-                "eligible": "IRS records indicate likely eligibility. Verify before giving.",
-                "unverified": "Limited IRS evidence available. Confirm with IRS before giving.",
-                "revoked": "IRS records show revocation. Confirm current status before giving.",
-                "unknown": "IRS status not yet verified.",
-                "eligible_pending_verification": "Likely eligible per BMF. Full verification pending."
-            }
-
-            return {
-                "irs_eligibility_status": status or "unknown",
-                "irs_eligibility_checked_at": checked_at,
-                "irs_eligibility_sources": sources,
-                "irs_eligibility_explanation": explanations.get(status or "unknown", "Check IRS for current status.")
-            }
+            return _eligibility_dict_from_fields(*row)
     except Exception as e:
         print(f"[IRS] Error reading {ein}: {e}", file=sys.stderr)
 
-    return {
-        "irs_eligibility_status": "unknown",
-        "irs_eligibility_checked_at": None,
-        "irs_eligibility_sources": [],
-        "irs_eligibility_explanation": "IRS status unavailable"
-    }
+    return dict(_IRS_ELIGIBILITY_UNKNOWN)
 
 # Fallback functions if helper unavailable
 if not _irs_eligibility_available:
@@ -2425,8 +2446,17 @@ def list_organizations():
             f"EXISTS (SELECT 1 FROM json_each(cause_tags) WHERE {mission_parts})"
         )
         params.extend(f'%{t}%' for t in mission_tags)
-    # Geography facet intentionally NOT implemented -- see daanaa_api.py for
-    # why (no real per-org service-area data exists to filter on, 2026-08-21).
+    # Geography facet (service-area filtering) intentionally NOT implemented:
+    # checked 2026-08-21, there is no real per-org service-area data to filter
+    # on. `org.get('extracted_metadata')` (read at line ~2978, service_scope
+    # building) is never actually populated anywhere in this file -- always
+    # None in practice. The only other candidate, `org_service_areas` table,
+    # has exactly 1 row across 1.7M+ orgs. Wiring a filter to either would
+    # silently no-op (donor picks a state, results don't narrow, looks
+    # broken) -- worse than not having the control. OrgContextFilters.tsx's
+    # geography dropdown stays in the UI (state is tracked, URL syncs) but
+    # does not currently affect results; revisit if/when service-area data
+    # actually gets populated at scale.
 
     # Exact visibility (lamp) tier filter retired 2026-08-08 (founder decision).
     # _TIER_HIERARCHY was dead code even before this -- defined, never read
@@ -2576,7 +2606,8 @@ def list_organizations():
                (r.website IS NOT NULL AND r.website != '') as has_website,
                r.scoring_tier, r.confidence, r.peer_group_description,
                r.peer_group_size, r.is_inferred_v6, r.confidence_margin_v6,
-               r.merit_percentile_v6, r.merit_percentile_confidence_v6
+               r.merit_percentile_v6, r.merit_percentile_confidence_v6,
+               r.irs_eligibility_status, r.irs_eligibility_checked_at, r.irs_eligibility_sources
         FROM {fts_from}
         WHERE {where_sql}
         {order_sql}
@@ -2622,11 +2653,25 @@ def list_organizations():
         for _col in ('scoring_tier', 'confidence', 'peer_group_description',
                      'peer_group_size', 'merit_percentile_v6', 'merit_percentile_confidence_v6', 'is_inferred_v6', 'confidence_margin_v6'):
             d.pop(_col, None)
-        # Phase 2: Add IRS Eligibility fields (additive)
-        d.update(get_eligibility_fields(d['EIN']))
-        # Phase 2: Filter revoked orgs from search results
-        if should_show_profile_publicly(d['EIN']):
-            orgs.append(_strip_scores(d))
+        # Phase 2: Add IRS Eligibility fields (additive). Built inline from
+        # columns already in this row -- no per-row DB connection (2026-08-18
+        # perf fix; previously get_eligibility_fields(d['EIN']) opened a new
+        # sqlite3 connection for every one of the 20-100 rows on this page).
+        d.update(_eligibility_dict_from_fields(
+            d.pop('irs_eligibility_status', None),
+            d.pop('irs_eligibility_checked_at', None),
+            d.pop('irs_eligibility_sources', None),
+        ))
+        # Revoked-org filtering already happened in the SQL WHERE clause via
+        # _DEDUCTIBILITY_FILTER (excludes irs_revoked=1 / org_status=revoked),
+        # so the old per-row should_show_profile_publicly(d['EIN']) check here
+        # was redundant -- and always returned True anyway, since the optional
+        # helper import (`scripts.irs_eligibility_helper`) doesn't match this
+        # module's actual path (`scripts.lib.irs_eligibility_helper`) and
+        # silently falls back. Left as a comment, not fixed, since correcting
+        # the import path changes runtime behavior beyond this endpoint and
+        # deserves its own look, not a drive-by inside a perf fix.
+        orgs.append(_strip_scores(d))
 
     # Search Phase 2: semantic reranking for cause queries
     if search_intent and search_intent.get('intent') == 'cause' and _reranker_available and len(orgs) > 1 and search:
@@ -2680,6 +2725,20 @@ def get_organization(ein):
     ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
     if not ein_clean or len(ein_clean) != 9:
         return jsonify({"error": "Invalid EIN format. EIN must be 9 digits."}), 400
+
+    # Response cache (2026-08-18 perf fix): the 'org' TTL has been configured
+    # in _CACHE_TTL since this endpoint's cache namespace was set up, but
+    # nothing ever read or wrote it -- every visit (including repeat visits
+    # to the same popular org) paid for the full query fan-out below: base
+    # row, revenue history, program narrative, claim overrides, similar-orgs
+    # lookup, category/state rank aggregates, financial context assessment,
+    # v5/cohort enrichment, event count. This endpoint takes no query params
+    # that vary its payload (confirmed: no request.args reads anywhere in
+    # this function), so EIN alone is a safe, complete cache key.
+    ck = _ck('org', ein_clean)
+    cached = _cget(ck, 'org')
+    if cached:
+        return jsonify(cached)
 
     db = get_db()
 
@@ -3071,6 +3130,7 @@ def get_organization(ein):
     _replace_revenue_band(org)
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
+    _cset(ck, result)
     return jsonify(result)
 
 @app.route('/api/organizations/<ein>/recall')

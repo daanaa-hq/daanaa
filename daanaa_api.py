@@ -2254,8 +2254,23 @@ def list_organizations():
     per_page = min(request.args.get('per_page', 20, type=int), 100)
     search = request.args.get('q', '').strip()[:200]
 
-    # Build cache key from all query params before parsing
-    ck = _ck('orgs', request.query_string.decode())
+    # Build cache key from query params, excluding 'seed'. 'seed' is parsed
+    # below (shuffle_seed) but never actually fed into the random-offset
+    # computation -- random_offset uses Python's unseeded random.randint()
+    # regardless. The frontend generates a fresh seed on every page load, so
+    # including it here made every browse/directory request a guaranteed
+    # cache miss for no functional benefit: found 2026-08-19 while
+    # investigating a live "orgs aren't loading" report, alongside the
+    # missing subsection/deductibility index (migrations/027). Also sorts
+    # params so key order never causes a spurious cache-key difference.
+    #
+    # This fix shipped to droplet_api.py on 2026-08-19 but was never ported
+    # back to this file -- found 2026-08-22 while reconciling the two copies
+    # in the other direction (droplet behind dev on IRS-eligibility/caching
+    # fixes) and discovering the drift also runs the other way.
+    _ck_params = urllib.parse.parse_qsl(request.query_string.decode(), keep_blank_values=True)
+    _ck_params = sorted((k, v) for k, v in _ck_params if k != 'seed')
+    ck = _ck('orgs', urllib.parse.urlencode(_ck_params))
     cached = _cget(ck, 'search')
     if cached: return jsonify(cached)
 
