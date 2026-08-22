@@ -1889,3 +1889,87 @@ also flagged separately: the local disk is at 98% used, 24GB free, worth
 the founder's awareness independent of this work) so this change exists
 locally only; nothing shipped to the droplet. Phase 1 (choosing/validating
 one canonical run) is real, multi-step work and hasn't started.
+
+## 2026-08-21: V6 plan — Phases A, B, C shipped and verified; Phase D drafted, awaiting founder review
+
+**Continuation of the V6 reconciliation plan** (see the three entries above
+this one, same date). Founder: "keep doing all the way if you, Codex
+agree." All work below is committed to `master`, local-only — nothing
+deployed to the droplet.
+
+**Phase A (dead ledger retirement) — done.** Backed up and dropped the
+abandoned `v6_scoring_runs`/`v6_peer_context_assignments`/
+`v6_conditional_band_context` prototype tables (verified zero scheduled
+consumers first). Rewired the one real consumer
+(`scripts/scoring/v6_financial_context_api.py`) to read live
+`registry_enriched` columns instead, fail-closed (no fabricated fields).
+Archived 8 dead-reference files via `git mv`. Verified by actually running
+the rewritten function against a real EIN, not just reading the diff.
+
+**Phase B (audit trail) — done, corrected mid-flight.** First draft created
+a new `scoring_run_log` table before checking for prior art — caught this
+myself (not flagged externally) after noticing an existing `scoring_runs`
+table (47 real v4/v5 rows, live in both API files, already in CLAUDE.md's
+schema docs) that did the same job. Corrected to extend `scoring_runs`
+instead, worked around its pre-existing `completed_at NOT NULL` constraint
+by matching `load_v5_scores_delta.py`'s established single-INSERT-at-
+completion convention, and added a narrow `scoring_run_current` pointer
+table so `trg_scoring_history_delta` (a DB-level trigger, not application
+code, so a future alternate scorer script can't bypass it) can attribute
+delta rows to the in-flight run. Delta-only logging (one row per actual
+`scoring_tier`/`merit_percentile_v6` change, not per org per night —
+~750M rows/year at full snapshot cadence would be unsustainable), per
+Codex's pushback that a single run-summary row alone isn't sufficient for
+Stewardship P9 explainability. Verified independently: set the pointer,
+changed a real org's tier, confirmed exactly one correct delta row and a
+no-op producing none, reverted, confirmed zero leftover state.
+
+**Phase C (frontend/API consistency) — done.** Found `WhyTrustThem.tsx`
+(summary narrative, top of the org page) and `FinancialContext.tsx` ("Deep
+Dive," lower down) are deliberately meant to tell the same story at two
+altitudes, but read from different, disagreeing pipelines — the former
+from a legacy `peer_percentile` column, the latter from the real v6
+`scoring_tier`/`tier_label`. Migrated `WhyTrustThem.tsx` onto the same v6
+fields `FinancialContext.tsx` already uses correctly, including
+deliberately avoiding `peer_group_size_v6`/`peer_group_description_v6`
+(FinancialContext's own comments document those as a separately verified-
+buggy pipeline, 95 vs 22 peers for the same EIN). Honest per-tier fallback
+text for the ~73% of orgs with a tier but no `merit_percentile_v6`, instead
+of silently hiding the section.
+
+**Found and fixed mid-Phase-C, a real factual error already shipped
+earlier the same session:** `WhyTrustThem.tsx` and `V5Context.tsx` both
+said "stronger reserves than X%" — verified directly against
+`compute_revenue_percentiles()` in `daanaa_scorer.py` that the percentile
+ranks `total_revenue`, not `months_of_reserve`. Caught by Codex
+fact-checking the Phase D methodology draft against the real scorer code,
+not caught before the original copy shipped — an honest miss on both our
+parts, corrected same-session rather than left standing. Fixed to "Reports
+more revenue than X%."
+
+**Phase D (methodology.md rewrite) — drafted, two rounds of independent
+fact-checking, NOT considered final.** Replaced the retired 4-tier
+percentile-band description with the real 5-tier specificity waterfall and
+correct thresholds (25/20/3/5/3 peer-group minimums). Round 1 fact-check
+caught the revenue-vs-reserves error above (which is what surfaced it in
+the first place). Round 2 caught: unscored-but-processed orgs always get a
+Tier 4 assignment (never genuinely tier-less — my draft conflated the
+~5.6% *excluded* population, missing deductibility/NTEECC/state, with a
+"couldn't clear Tier 4" case that doesn't actually happen for processed
+orgs), percentile math uses `<=` not `<` (`bisect_right`), a fabricated
+county-level grouping example (the system never groups by county — region/
+state only), and "every nonprofit" overstating coverage. Committed to the
+repo so it's reviewable, explicitly not deployed and explicitly not
+asserted as finished — this is exactly the class of change (public
+methodology claims) CLAUDE.md gates on founder review regardless of how
+many times it's been fact-checked for accuracy; accuracy was verified,
+voice and completeness are the founder's call.
+
+**Not done:** droplet deployment of any of this (Phases A-C are backend/DB,
+autonomous once smoke-tested per CLAUDE.md, but haven't been deployed yet
+this session — local verification only so far). Phase E (the negative-
+revenue root fix) remains explicitly deferred per the earlier decision in
+this thread — real ripple effects beyond the 1,013 directly-affected orgs,
+needs its own approval. Phase F (the generalized LESSONS.md entry about
+"validation designed, never wired up" plus "a table that looks
+authoritative can be a dead prototype") not yet written.
