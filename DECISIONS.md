@@ -2148,3 +2148,45 @@ fix ship," not an inference from an unrelated page loading.
 
 **Not done**: Phase D (methodology.md) still explicitly awaits founder
 review — nothing about today's deploy changes that gate.
+
+## 2026-08-22: Phase D — corrected the REAL methodology page, not the dead one
+
+**Real, humbling finding before deploying today's earlier methodology.md
+work**: `frontend/public/pages/methodology.md` (drafted, fact-checked twice,
+committed earlier today) is dead content. Verified via `App.tsx`'s actual
+route table: `/methodology` renders `Methodology2.tsx` via a lazy import,
+never that markdown file, and nothing in the frontend fetches it. All of
+that earlier work was real, verified, and correct — on content zero donors
+ever see. Caught before declaring Phase D done, not after.
+
+**Applied the same fact-checking discipline to the file that's actually
+live**, three full rounds against the real scorer code:
+- The same revenue-vs-reserves error already found and fixed on the org-page
+  badge earlier today was present here too, worded differently ("V6 shows
+  a reserve-related metric") — same root cause, same fix.
+- Missing the distinct `3b_Broad_Category` tier; `Tier 4` misdescribed as
+  never supporting a numeric comparison when it can.
+- Overstated "category, geography, scale, and funding pattern" as always
+  combined; corrected to describe the real waterfall.
+- Coverage overclaim ("every organization page").
+
+**One deliberate pushback on Codex's round-3 feedback, not accepted as
+written**: Codex called "funding model" an inaccurate label for the Tier 4
+fallback, since the scorer script itself doesn't define what a funding
+model is. Checked against a real API response captured earlier this exact
+session (`"funding_archetype_label":"Donation-Funded Programs"`) — the
+underlying field genuinely is a funding-model classification; the scorer
+just consumes a pre-computed label rather than deriving one. Kept "funding
+model," fixed the more precise issue Codex also raised (how the fallback
+triggers) instead of discarding a correct claim.
+
+**Deployed and verified live**, not just from the deploy script's own
+report: fetched the exact JS chunk this build produced
+(`Methodology2-DUgUio4S.js`) directly from `daanaa.org` and confirmed the
+corrected copy is present in what's actually served.
+
+**This closes the loop on the original request that started this whole
+V6 thread** — the badge-vs-methodology contradiction that kicked off
+today's work. The badge itself was fixed this session (Option B wording).
+The methodology page describing the system accurately was the other half;
+it's now done, on the page that's actually live.
